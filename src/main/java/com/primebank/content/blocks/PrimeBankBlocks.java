@@ -17,6 +17,7 @@ import com.primebank.content.PrimeBankCreativeTab;
 @Mod.EventBusSubscriber(modid = PrimeBankMod.MODID)
 public final class PrimeBankBlocks {
     public static BlockTerminalPrimeBank TERMINAL;
+    public static BlockPOSPrimeBank POS;
 
     private PrimeBankBlocks() {}
 
@@ -28,7 +29,9 @@ public final class PrimeBankBlocks {
     public static void onRegisterBlocks(RegistryEvent.Register<Block> event) {
         TERMINAL = new BlockTerminalPrimeBank();
         TERMINAL.setCreativeTab(PrimeBankCreativeTab.TAB);
-        event.getRegistry().register(TERMINAL);
+        POS = new BlockPOSPrimeBank();
+        POS.setCreativeTab(PrimeBankCreativeTab.TAB);
+        event.getRegistry().registerAll(TERMINAL, POS);
     }
 
     /*
@@ -38,5 +41,6 @@ public final class PrimeBankBlocks {
     @SubscribeEvent
     public static void onRegisterItemBlocks(RegistryEvent.Register<Item> event) {
         event.getRegistry().register(new ItemBlock(TERMINAL).setRegistryName(TERMINAL.getRegistryName()));
+        event.getRegistry().register(new ItemBlock(POS).setRegistryName(POS.getRegistryName()));
     }
 }

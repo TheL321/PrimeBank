@@ -25,6 +25,7 @@ public final class PrimeBankItems {
     public static ItemCurrency CURRENCY_20D;
     public static ItemCurrency CURRENCY_50D;
     public static ItemCurrency CURRENCY_100D;
+    public static ItemCard CARD;
 
     private PrimeBankItems() {}
 
@@ -45,6 +46,7 @@ public final class PrimeBankItems {
         CURRENCY_20D = makeCurrency("currency_20d", "primebank.currency_20d", 2000);
         CURRENCY_50D = makeCurrency("currency_50d", "primebank.currency_50d", 5000);
         CURRENCY_100D = makeCurrency("currency_100d", "primebank.currency_100d", 10000);
+        CARD = new ItemCard("card", "primebank.card");
 
         event.getRegistry().registerAll(
             CURRENCY_1C.setCreativeTab(PrimeBankCreativeTab.TAB),
@@ -57,7 +59,8 @@ public final class PrimeBankItems {
             CURRENCY_10D.setCreativeTab(PrimeBankCreativeTab.TAB),
             CURRENCY_20D.setCreativeTab(PrimeBankCreativeTab.TAB),
             CURRENCY_50D.setCreativeTab(PrimeBankCreativeTab.TAB),
-            CURRENCY_100D.setCreativeTab(PrimeBankCreativeTab.TAB)
+            CURRENCY_100D.setCreativeTab(PrimeBankCreativeTab.TAB),
+            CARD.setCreativeTab(PrimeBankCreativeTab.TAB)
         );
     }
 

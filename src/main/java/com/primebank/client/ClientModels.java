@@ -34,6 +34,10 @@ public final class ClientModels {
         register(PrimeBankItems.CURRENCY_50D);
         register(PrimeBankItems.CURRENCY_100D);
         register(Item.getItemFromBlock(PrimeBankBlocks.TERMINAL));
+        // English: Register Card item and POS block so they render.
+        // Español: Registrar el ítem Tarjeta y el bloque POS para que se rendericen.
+        register(PrimeBankItems.CARD);
+        register(Item.getItemFromBlock(PrimeBankBlocks.POS));
     }
 
     /*

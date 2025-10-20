@@ -19,8 +19,11 @@ item.primebank.currency_20d.name=Billete de $20
 item.primebank.currency_50d.name=Billete de $50
 item.primebank.currency_100d.name=Billete de $100
 
+item.primebank.card.name=Tarjeta PrimeBank
+
 # Bloques
 tile.primebank.terminal_primebank.name=Terminal PrimeBank
+tile.primebank.pos_primebank.name=POS PrimeBank
 
 # Mensajes de comandos e interfaz
 primebank.usage=Uso: %s

@@ -23,6 +23,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.math.BlockPos;
 
 /*
  English: Root command for PrimeBank (temporary test operations for Phase 1).
@@ -138,6 +139,50 @@ public class CommandPrimeBank extends CommandBase {
     @Override
     public List<String> getAliases() {
         return java.util.Collections.singletonList("pb");
+    }
+
+    @Override
+    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, BlockPos targetPos) {
+        // English: Provide tab-completion for subcommands and usernames for transfercents.
+        // Español: Proveer autocompletado para subcomandos y nombres de usuario para transfercents.
+
+        // English: Suggest subcommands when typing the first argument.
+        // Español: Sugerir subcomandos al escribir el primer argumento.
+        if (args.length <= 1) {
+            String[] subs = new String[] { "balance", "depositcents", "withdrawcents", "transfercents", "reload" };
+            return CommandBase.getListOfStringsMatchingLastWord(args, subs);
+        }
+
+        String sub = args[0].toLowerCase();
+        switch (sub) {
+            case "transfercents": {
+                if (args.length == 2) {
+                    // English: Suggest online player usernames for the recipient.
+                    // Español: Sugerir nombres de jugadores en línea para el destinatario.
+                    return CommandBase.getListOfStringsMatchingLastWord(args, server.getPlayerList().getOnlinePlayerNames());
+                } else if (args.length == 3) {
+                    // English: Suggest common cent amounts.
+                    // Español: Sugerir montos comunes en centavos.
+                    String[] cents = new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" };
+                    return CommandBase.getListOfStringsMatchingLastWord(args, cents);
+                }
+                break;
+            }
+            case "depositcents":
+            case "withdrawcents": {
+                if (args.length == 2) {
+                    // English: Suggest common cent amounts for deposit/withdraw.
+                    // Español: Sugerir montos comunes en centavos para depositar/retirar.
+                    String[] cents = new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" };
+                    return CommandBase.getListOfStringsMatchingLastWord(args, cents);
+                }
+                break;
+            }
+            default:
+                break;
+        }
+
+        return java.util.Collections.emptyList();
     }
 
     private long parseLongArg(String s) throws CommandException {

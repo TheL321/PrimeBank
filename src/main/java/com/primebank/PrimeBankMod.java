@@ -17,6 +17,7 @@ import com.primebank.commands.CommandPrimeBank;
 import com.primebank.persistence.BankPersistence;
 import com.primebank.persistence.PersistencePaths;
 import java.io.File;
+import com.primebank.net.Net;
 
 /*
  English: PrimeBank mod entry point. Initializes logger, network channel, and loads default config.
@@ -53,6 +54,9 @@ public class PrimeBankMod {
          English: Initialization phase. Reserved for registries, GUIs, and packet registration in later phases.
          Español: Fase de inicialización. Reservado para registros, interfaces y paquetes en fases posteriores.
         */
+        // English: Register network packets (Phase 2 skeleton).
+        // Español: Registrar paquetes de red (esqueleto de Fase 2).
+        Net.register();
     }
 
     @EventHandler

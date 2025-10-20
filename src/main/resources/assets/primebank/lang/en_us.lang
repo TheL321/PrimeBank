@@ -19,8 +19,11 @@ item.primebank.currency_20d.name=$20 Bill
 item.primebank.currency_50d.name=$50 Bill
 item.primebank.currency_100d.name=$100 Bill
 
+item.primebank.card.name=PrimeBank Card
+
 # Blocks
 tile.primebank.terminal_primebank.name=PrimeBank Terminal
+tile.primebank.pos_primebank.name=PrimeBank POS
 
 # Command and UI messages
 primebank.usage=Usage: %s
@@ -47,6 +50,8 @@ primebank.reload.ok=Reloaded
 primebank.unknown_subcommand=Unknown subcommand
 primebank.error.bad_number=Invalid number: %s
 primebank.error.player_not_found=Player not found: %s
+primebank.pos.init.sent=POS request sent
+primebank.pos.init.recv=POS request received: %s
 
 # Terminal
 primebank.terminal.balance=PrimeBank Terminal — Balance: %s
