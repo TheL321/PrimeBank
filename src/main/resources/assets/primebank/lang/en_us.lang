@@ -52,6 +52,10 @@ primebank.error.bad_number=Invalid number: %s
 primebank.error.player_not_found=Player not found: %s
 primebank.pos.init.sent=POS request sent
 primebank.pos.init.recv=POS request received: %s
+primebank.pos.prompt.title=Confirm POS Charge
+primebank.pos.prompt.amount=Amount: %s
+primebank.pos.result.accepted=POS charge accepted
+primebank.pos.result.cancelled=POS charge cancelled
 
 # Terminal
 primebank.terminal.balance=PrimeBank Terminal — Balance: %s

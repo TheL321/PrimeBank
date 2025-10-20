@@ -50,6 +50,12 @@ primebank.error.player_not_found=Jugador no encontrado: %s
 primebank.deposit.error.amount_le_zero=El monto de depósito debe ser > 0
 primebank.reload.ok=Recargado
 primebank.unknown_subcommand=Subcomando desconocido
+primebank.pos.init.sent=Solicitud POS enviada
+primebank.pos.init.recv=Solicitud POS recibida: %s
+primebank.pos.prompt.title=Confirmar Cobro POS
+primebank.pos.prompt.amount=Monto: %s
+primebank.pos.result.accepted=Cobro POS aceptado
+primebank.pos.result.cancelled=Cobro POS cancelado
 
 # Terminal
 primebank.terminal.balance=Terminal PrimeBank — Saldo: %s

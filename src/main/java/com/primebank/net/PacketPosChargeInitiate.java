@@ -35,6 +35,9 @@ public class PacketPosChargeInitiate implements IMessage {
                 EntityPlayerMP p = ctx.getServerHandler().player;
                 p.sendMessage(new net.minecraft.util.text.TextComponentTranslation(
                     "primebank.pos.init.recv", Money.formatUsd(message.cents)));
+                // English: Send S2C prompt to client to confirm/cancel this charge.
+                // Español: Enviar aviso S2C al cliente para confirmar/cancelar este cobro.
+                com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketPosPrompt(message.cents), p);
             });
             return null;
         }
