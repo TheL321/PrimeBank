@@ -1,0 +1,55 @@
+mod.primebank.name=PrimeBank
+mod.primebank.description=Banking, market, POS, and loans for Minecraft servers.
+ui.primebank.ok=OK
+ui.primebank.cancel=Cancel
+
+# Creative Tab
+itemGroup.primebank=PrimeBank
+
+# Currency Items
+item.primebank.currency_1c.name=1 Cent Coin
+item.primebank.currency_5c.name=5 Cent Coin
+item.primebank.currency_10c.name=10 Cent Coin
+item.primebank.currency_25c.name=25 Cent Coin
+item.primebank.currency_50c.name=50 Cent Coin
+item.primebank.currency_1d.name=$1 Bill
+item.primebank.currency_5d.name=$5 Bill
+item.primebank.currency_10d.name=$10 Bill
+item.primebank.currency_20d.name=$20 Bill
+item.primebank.currency_50d.name=$50 Bill
+item.primebank.currency_100d.name=$100 Bill
+
+# Blocks
+tile.primebank.terminal_primebank.name=PrimeBank Terminal
+
+# Command and UI messages
+primebank.usage=Usage: %s
+primebank.player_only=Players only
+primebank.balance=Balance: %s
+primebank.missing_cents=Missing cents argument
+primebank.amount_le_zero=Amount must be > 0
+primebank.deposit.not_enough_currency=Not enough currency in inventory
+primebank.deposit.ok=Deposit completed: +%s
+primebank.deposit.error.amount_le_zero=Amount must be > 0
+primebank.deposit.error.account_not_found=Account not found
+primebank.withdraw.ok=Withdraw completed: %s
+primebank.withdraw.error.amount_le_zero=Amount must be > 0
+primebank.withdraw.error.account_not_found=Account not found
+primebank.withdraw.error.insufficient=Insufficient funds
+primebank.missing_args=Missing arguments
+primebank.transfer.ok=Transfer completed
+primebank.transfer.ok_fee=Transfer completed. Fee: %s
+primebank.transfer.error.amount_le_zero=Amount must be > 0
+primebank.transfer.error.invalid_accounts=Invalid accounts
+primebank.transfer.error.account_not_found=Account not found
+primebank.transfer.error.insufficient=Insufficient funds
+primebank.reload.ok=Reloaded
+primebank.unknown_subcommand=Unknown subcommand
+primebank.error.bad_number=Invalid number: %s
+primebank.error.player_not_found=Player not found: %s
+
+# Terminal
+primebank.terminal.balance=PrimeBank Terminal — Balance: %s
+primebank.terminal.prompt_deposit=Sneak to deposit all cash
+primebank.terminal.no_cash=No cash to deposit
+primebank.terminal.deposit_added=Deposited %s — Balance: %s

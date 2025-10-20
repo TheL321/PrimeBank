@@ -1,0 +1,174 @@
+package com.primebank.commands;
+
+import java.io.File;
+import java.util.List;
+import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+
+import com.mojang.authlib.GameProfile;
+
+import com.primebank.PrimeBankMod;
+import com.primebank.core.Money;
+import com.primebank.core.accounts.PlayerAccounts;
+import com.primebank.core.ledger.Ledger;
+import com.primebank.core.state.PrimeBankState;
+import com.primebank.persistence.BankPersistence;
+import com.primebank.persistence.PersistencePaths;
+import com.primebank.content.items.CashUtil;
+
+import net.minecraft.command.CommandBase;
+import net.minecraft.command.CommandException;
+import net.minecraft.command.ICommandSender;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextComponentTranslation;
+
+/*
+ English: Root command for PrimeBank (temporary test operations for Phase 1).
+ Español: Comando raíz para PrimeBank (operaciones de prueba temporales para la Fase 1).
+*/
+public class CommandPrimeBank extends CommandBase {
+    @Override
+    public String getName() {
+        return "primebank";
+    }
+
+    @Override
+    public String getUsage(ICommandSender sender) {
+        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|reload>";
+    }
+
+    @Override
+    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
+        if (args.length == 0) {
+            sender.sendMessage(new TextComponentTranslation("primebank.usage", getUsage(sender)));
+            return;
+        }
+        String sub = args[0].toLowerCase();
+        if (!(sender instanceof EntityPlayerMP)) {
+            sender.sendMessage(new TextComponentTranslation("primebank.player_only"));
+            return;
+        }
+        EntityPlayerMP player = (EntityPlayerMP) sender;
+        UUID me = player.getUniqueID();
+        String myAcc = PlayerAccounts.ensurePersonal(me);
+        Ledger ledger = new Ledger(PrimeBankState.get().accounts());
+
+        switch (sub) {
+            case "balance": {
+                long bal = PrimeBankState.get().accounts().get(myAcc).getBalanceCents();
+                sender.sendMessage(new TextComponentTranslation("primebank.balance", Money.formatUsd(bal)));
+                break;
+            }
+            case "depositcents": {
+                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_cents")); return; }
+                long cents = parseLongArg(args[1]);
+                if (cents <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); return; }
+                boolean spent = CashUtil.spendCurrency(player, cents);
+                if (!spent) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.deposit.not_enough_currency"));
+                } else {
+                    Ledger.OpResult r = ledger.deposit(myAcc, cents);
+                    String key = r.success ? "primebank.deposit.ok" : ("primebank.deposit.error." + r.code);
+                    sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
+                    BankPersistence.saveAllAsync();
+                }
+                break;
+            }
+            case "withdrawcents": {
+                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_cents")); return; }
+                long cents = parseLongArg(args[1]);
+                Ledger.OpResult r = ledger.withdraw(myAcc, cents);
+                String key = r.success ? "primebank.withdraw.ok" : ("primebank.withdraw.error." + r.code);
+                if (r.success) {
+                    // English: Include withdrawn amount in the success message.
+                    // Español: Incluir el monto retirado en el mensaje de éxito.
+                    sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
+                } else {
+                    sender.sendMessage(new TextComponentTranslation(key));
+                }
+                if (r.success) {
+                    // English: Give the withdrawn amount back as currency items to the player's inventory.
+                    // Español: Entregar el monto retirado como ítems de moneda al inventario del jugador.
+                    CashUtil.giveCurrency(player, cents);
+                }
+                BankPersistence.saveAllAsync();
+                break;
+            }
+            case "transfercents": {
+                if (args.length < 3) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); return; }
+                // English: Accept username or UUID for the recipient. Keep UUID support.
+                // Español: Aceptar nombre de usuario o UUID para el destinatario. Mantener soporte de UUID.
+                UUID to;
+                try {
+                    to = UUID.fromString(args[1]);
+                } catch (IllegalArgumentException ex) {
+                    to = resolveUsernameToUuid(server, args[1]);
+                }
+                String toAcc = PlayerAccounts.ensurePersonal(to);
+                long cents = parseLongArg(args[2]);
+                Ledger.TransferResult tr = ledger.transfer(myAcc, toAcc, cents);
+                if (tr.success) {
+                    if (tr.feeApplied) sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok_fee", Money.formatUsd(tr.feeCents)));
+                    else sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok"));
+                } else {
+                    sender.sendMessage(new TextComponentTranslation("primebank.transfer.error." + tr.code));
+                }
+                BankPersistence.saveAllAsync();
+                break;
+            }
+            case "reload": {
+                File worldDir = new File(server.getDataDirectory(), server.getFolderName());
+                PersistencePaths.setWorldDir(worldDir);
+                BankPersistence.loadAll();
+                sender.sendMessage(new TextComponentTranslation("primebank.reload.ok"));
+                break;
+            }
+            default:
+                sender.sendMessage(new TextComponentTranslation("primebank.unknown_subcommand"));
+        }
+    }
+
+    @Override
+    public int getRequiredPermissionLevel() {
+        return 0;
+    }
+
+    @Override
+    public List<String> getAliases() {
+        return java.util.Collections.singletonList("pb");
+    }
+
+    private long parseLongArg(String s) throws CommandException {
+        try {
+            return Long.parseLong(s);
+        } catch (NumberFormatException e) {
+            // English: Localized bad number error key; argument is injected via %s.
+            // Español: Clave localizada para error de número inválido; el argumento se inserta con %s.
+            throw new CommandException("primebank.error.bad_number", s);
+        }
+    }
+
+    /*
+     English: Resolve a username to a UUID using online players, profile cache, and offline fallback.
+     Español: Resolver un nombre de usuario a UUID usando jugadores en línea, caché de perfiles y fallback offline.
+    */
+    private UUID resolveUsernameToUuid(MinecraftServer server, String username) throws CommandException {
+        // 1) Online players
+        net.minecraft.entity.player.EntityPlayerMP online = server.getPlayerList().getPlayerByUsername(username);
+        if (online != null) return online.getUniqueID();
+
+        // 2) Profile cache (players seen before)
+        com.mojang.authlib.GameProfile gp = server.getPlayerProfileCache().getGameProfileForUsername(username);
+        if (gp != null && gp.getId() != null) return gp.getId();
+
+        // 3) Offline mode fallback: deterministic offline UUID
+        if (!server.isServerInOnlineMode()) {
+            return java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+
+        // 4) Not found
+        throw new CommandException("primebank.error.player_not_found", username);
+    }
+}

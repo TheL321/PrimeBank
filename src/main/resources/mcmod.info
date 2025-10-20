@@ -1,0 +1,16 @@
+[
+{
+  "modid": "primebank",
+  "name": "PrimeBank / BancoPrime",
+  "description": "PrimeBank: Banking, market, POS, and loans for Minecraft servers. | BancoPrime: Banca, mercado, POS y préstamos para servidores de Minecraft.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["PrimeBank Team"],
+  "credits": "Thanks to Forge and FML.",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

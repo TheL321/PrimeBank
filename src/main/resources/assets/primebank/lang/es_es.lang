@@ -1,0 +1,55 @@
+mod.primebank.name=BancoPrime
+mod.primebank.description=Banca, mercado, POS y préstamos para servidores de Minecraft.
+ui.primebank.ok=Aceptar
+ui.primebank.cancel=Cancelar
+
+# Pestaña Creativa
+itemGroup.primebank=BancoPrime
+
+# Ítems de Moneda
+item.primebank.currency_1c.name=Moneda de 1 centavo
+item.primebank.currency_5c.name=Moneda de 5 centavos
+item.primebank.currency_10c.name=Moneda de 10 centavos
+item.primebank.currency_25c.name=Moneda de 25 centavos
+item.primebank.currency_50c.name=Moneda de 50 centavos
+item.primebank.currency_1d.name=Billete de $1
+item.primebank.currency_5d.name=Billete de $5
+item.primebank.currency_10d.name=Billete de $10
+item.primebank.currency_20d.name=Billete de $20
+item.primebank.currency_50d.name=Billete de $50
+item.primebank.currency_100d.name=Billete de $100
+
+# Bloques
+tile.primebank.terminal_primebank.name=Terminal PrimeBank
+
+# Mensajes de comandos e interfaz
+primebank.usage=Uso: %s
+primebank.player_only=Solo jugadores
+primebank.balance=Saldo: %s
+primebank.missing_cents=Falta el argumento de centavos
+primebank.amount_le_zero=El monto debe ser > 0
+primebank.deposit.not_enough_currency=No hay suficiente moneda en el inventario
+primebank.deposit.ok=Depósito completado: +%s
+primebank.deposit.error.account_not_found=Cuenta no encontrada
+primebank.withdraw.ok=Retiro completado: %s
+primebank.withdraw.error.amount_le_zero=El monto debe ser > 0
+primebank.withdraw.error.account_not_found=Cuenta no encontrada
+primebank.withdraw.error.insufficient=Fondos insuficientes
+primebank.missing_args=Faltan argumentos
+primebank.transfer.ok=Transferencia completada
+primebank.transfer.ok_fee=Transferencia completada. Comisión: %s
+primebank.transfer.error.amount_le_zero=El monto debe ser > 0
+primebank.transfer.error.invalid_accounts=Cuentas inválidas
+primebank.transfer.error.account_not_found=Cuenta no encontrada
+primebank.transfer.error.insufficient=Fondos insuficientes
+primebank.error.bad_number=Número inválido: %s
+primebank.error.player_not_found=Jugador no encontrado: %s
+primebank.deposit.error.amount_le_zero=El monto de depósito debe ser > 0
+primebank.reload.ok=Recargado
+primebank.unknown_subcommand=Subcomando desconocido
+
+# Terminal
+primebank.terminal.balance=Terminal PrimeBank — Saldo: %s
+primebank.terminal.prompt_deposit=Agáchate para depositar todo el efectivo
+primebank.terminal.no_cash=Sin efectivo para depositar
+primebank.terminal.deposit_added=Depositado %s — Saldo: %s
