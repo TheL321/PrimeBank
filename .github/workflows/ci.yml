@@ -1,0 +1,56 @@
+# GitHub Actions CI for PrimeBank - Forge 1.12.2
+# English: Builds the mod with Gradle on pushes and pull requests.
+# Español: Compila el mod con Gradle en cada push y pull request.
+
+name: CI - PrimeBank Forge 1.12.2
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# English: Avoid running multiple redundant builds per branch concurrently.
+# Español: Evita ejecutar múltiples compilaciones redundantes por rama simultáneamente.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # English: Use Ubuntu runner for faster Gradle builds. Java 8 is required for Forge 1.12.2.
+    # Español: Usa Ubuntu para compilaciones Gradle más rápidas. Java 8 es requerido para Forge 1.12.2.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository / Revisar repositorio
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8 (Temurin) / Configurar JDK 8 (Temurin)
+        # English: Installs JDK 8 and enables Gradle dependency cache.
+        # Español: Instala JDK 8 y habilita caché de dependencias de Gradle.
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: gradle
+
+      - name: Make Gradle wrapper executable / Hacer ejecutable el wrapper de Gradle
+        run: chmod +x gradlew
+
+      - name: Build with Gradle / Compilar con Gradle
+        # English: Use --no-daemon to be CI-friendly.
+        # Español: Usa --no-daemon para ser amigable con CI.
+        run: ./gradlew build --no-daemon
+
+      - name: Upload artifacts / Subir artefactos
+        # English: Publishes built jars and distributions as CI artifacts.
+        # Español: Publica los JARs y distribuciones compiladas como artefactos de CI.
+        uses: actions/upload-artifact@v4
+        with:
+          name: primebank-build
+          path: |
+            build/libs/*.jar
+            build/distributions/*
+          if-no-files-found: warn
+          retention-days: 7
