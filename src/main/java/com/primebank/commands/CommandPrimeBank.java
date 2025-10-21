@@ -10,6 +10,7 @@ import com.mojang.authlib.GameProfile;
 import com.primebank.PrimeBankMod;
 import com.primebank.core.Money;
 import com.primebank.core.accounts.PlayerAccounts;
+import com.primebank.core.accounts.CompanyAccounts;
 import com.primebank.core.ledger.Ledger;
 import com.primebank.core.state.PrimeBankState;
 import com.primebank.persistence.BankPersistence;
@@ -37,7 +38,7 @@ public class CommandPrimeBank extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|reload>";
+        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|reload>";
     }
 
     @Override
@@ -60,6 +61,14 @@ public class CommandPrimeBank extends CommandBase {
             case "balance": {
                 long bal = PrimeBankState.get().accounts().get(myAcc).getBalanceCents();
                 sender.sendMessage(new TextComponentTranslation("primebank.balance", Money.formatUsd(bal)));
+                break;
+            }
+            case "mycompanybalance": {
+                // English: Show the executing player's default company account balance (seller proceeds).
+                // Español: Mostrar el saldo de la cuenta de empresa por defecto del jugador (ingresos del vendedor).
+                String companyId = CompanyAccounts.ensureDefault(me);
+                long bal = PrimeBankState.get().accounts().get(companyId).getBalanceCents();
+                sender.sendMessage(new TextComponentTranslation("primebank.company.balance", companyId, Money.formatUsd(bal)));
                 break;
             }
             case "depositcents": {
@@ -149,7 +158,7 @@ public class CommandPrimeBank extends CommandBase {
         // English: Suggest subcommands when typing the first argument.
         // Español: Sugerir subcomandos al escribir el primer argumento.
         if (args.length <= 1) {
-            String[] subs = new String[] { "balance", "depositcents", "withdrawcents", "transfercents", "reload" };
+            String[] subs = new String[] { "balance", "depositcents", "withdrawcents", "transfercents", "mycompanybalance", "reload" };
             return CommandBase.getListOfStringsMatchingLastWord(args, subs);
         }
 

@@ -57,6 +57,8 @@ primebank.pos.prompt.amount=Amount: %s
 primebank.pos.result.accepted=POS charge accepted
 primebank.pos.result.cancelled=POS charge cancelled
 primebank.pos.prompt.merchant=Merchant: %s
+primebank.pos.result.accepted.details=Payment completed. To merchant: %s, Central fee: %s
+primebank.pos.notify.merchant.received=POS sale received: %s from %s
 primebank.pos.pending.set=Pending charge set: %s
 primebank.pos.pending.cleared=Pending charge cleared
 primebank.pos.pending.bad_amount=Invalid amount
@@ -79,3 +81,6 @@ primebank.terminal.balance=PrimeBank Terminal — Balance: %s
 primebank.terminal.prompt_deposit=Sneak to deposit all cash
 primebank.terminal.no_cash=No cash to deposit
 primebank.terminal.deposit_added=Deposited %s — Balance: %s
+
+# Company
+primebank.company.balance=Company %s — Balance: %s

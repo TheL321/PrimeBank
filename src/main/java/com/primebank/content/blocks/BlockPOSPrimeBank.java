@@ -48,11 +48,16 @@ public class BlockPOSPrimeBank extends Block {
             TileEntity te = worldIn.getTileEntity(pos);
             if (!(te instanceof TilePosPrimeBank)) return true;
             TilePosPrimeBank t = (TilePosPrimeBank) te;
-            if (t.companyId == null) {
-                String companyId = CompanyAccounts.ensureDefault(playerIn.getUniqueID());
-                t.companyId = companyId;
-                t.markDirty();
-                playerIn.sendMessage(new TextComponentTranslation("primebank.pos.linked", companyId));
+            if (playerIn.isSneaking()) {
+                if (t.companyId == null) {
+                    String companyId = CompanyAccounts.ensureDefault(playerIn.getUniqueID());
+                    t.companyId = companyId;
+                    t.markDirty();
+                    playerIn.sendMessage(new TextComponentTranslation("primebank.pos.linked", companyId));
+                } else {
+                    playerIn.sendMessage(new TextComponentTranslation("primebank.pos.linked.already", t.companyId));
+                }
+                return true;
             }
         }
         // English: Buyer client-side initiates POS charge when right-clicking while holding a card.
