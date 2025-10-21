@@ -56,6 +56,23 @@ primebank.pos.prompt.title=Confirmar Cobro POS
 primebank.pos.prompt.amount=Monto: %s
 primebank.pos.result.accepted=Cobro POS aceptado
 primebank.pos.result.cancelled=Cobro POS cancelado
+primebank.pos.prompt.merchant=Comerciante: %s
+primebank.pos.pending.set=Cobro pendiente establecido: %s
+primebank.pos.pending.cleared=Cobro pendiente limpiado
+primebank.pos.pending.bad_amount=Monto inválido
+primebank.pos.error.not_linked=POS no enlazado a una empresa
+primebank.pos.error.no_pending=No hay un cobro pendiente establecido
+primebank.pos.linked=POS enlazado a la empresa %s
+primebank.pos.linked.already=POS ya está enlazado a la empresa %s
+
+# Botones de interfaz
+ui.primebank.ok=Confirmar
+ui.primebank.cancel=Cancelar
+ui.primebank.charge=Cobrar
+
+# GUI del terminal del comerciante
+primebank.pos.terminal.title=Ingresar Monto a Cobrar
+primebank.pos.terminal.hint=Escribe un monto como 10 o 10.50 y presiona Cobrar
 
 # Terminal
 primebank.terminal.balance=Terminal PrimeBank — Saldo: %s

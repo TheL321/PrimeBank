@@ -18,6 +18,9 @@ import com.primebank.persistence.BankPersistence;
 import com.primebank.persistence.PersistencePaths;
 import java.io.File;
 import com.primebank.net.Net;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraft.util.ResourceLocation;
+import com.primebank.content.blocks.TilePosPrimeBank;
 
 /*
  English: PrimeBank mod entry point. Initializes logger, network channel, and loads default config.
@@ -46,6 +49,9 @@ public class PrimeBankMod {
          Español: Inicializa el estado global (registros, cuenta del banco central).
         */
         PrimeBankState.get().init();
+        // English: Register tile entities.
+        // Español: Registrar entidades de bloque.
+        GameRegistry.registerTileEntity(TilePosPrimeBank.class, new ResourceLocation(MODID, "pos_primebank"));
     }
 
     @EventHandler

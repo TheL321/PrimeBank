@@ -17,11 +17,13 @@ import com.primebank.net.PacketPosRespond;
 */
 public class GuiPosPrompt extends GuiScreen {
     private final long cents;
+    private final String companyId;
     private GuiButton btnOk;
     private GuiButton btnCancel;
 
-    public GuiPosPrompt(long cents) {
+    public GuiPosPrompt(long cents, String companyId) {
         this.cents = cents;
+        this.companyId = companyId;
     }
 
     @Override
@@ -40,18 +42,20 @@ public class GuiPosPrompt extends GuiScreen {
         this.drawDefaultBackground();
         String title = I18n.format("primebank.pos.prompt.title");
         String amount = I18n.format("primebank.pos.prompt.amount", Money.formatUsd(cents));
+        String merchant = I18n.format("primebank.pos.prompt.merchant", companyId == null ? "?" : companyId);
         drawCenteredString(this.fontRenderer, title, this.width / 2, this.height / 2 - 30, 0xFFFFFF);
         drawCenteredString(this.fontRenderer, amount, this.width / 2, this.height / 2 - 15, 0xFFFFFF);
+        drawCenteredString(this.fontRenderer, merchant, this.width / 2, this.height / 2 - 3, 0xAAAAAA);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
     @Override
     protected void actionPerformed(GuiButton button) throws IOException {
         if (button == btnOk) {
-            PrimeBankMod.NETWORK.sendToServer(new PacketPosRespond(true, cents));
+            PrimeBankMod.NETWORK.sendToServer(new PacketPosRespond(true, cents, companyId));
             close();
         } else if (button == btnCancel) {
-            PrimeBankMod.NETWORK.sendToServer(new PacketPosRespond(false, cents));
+            PrimeBankMod.NETWORK.sendToServer(new PacketPosRespond(false, cents, companyId));
             close();
         }
     }

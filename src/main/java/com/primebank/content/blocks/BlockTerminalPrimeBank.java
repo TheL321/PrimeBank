@@ -18,6 +18,8 @@ import com.primebank.core.state.PrimeBankState;
 import com.primebank.core.ledger.Ledger;
 import com.primebank.content.items.CashUtil;
 import com.primebank.PrimeBankMod;
+import net.minecraft.client.Minecraft;
+import com.primebank.client.gui.GuiTerminalCharge;
 
 /*
  English: PrimeBank Terminal block placeholder. Shows balance on use.
@@ -53,6 +55,12 @@ public class BlockTerminalPrimeBank extends Block {
                 long bal = PrimeBankState.get().accounts().get(accId).getBalanceCents();
                 playerIn.sendMessage(new TextComponentTranslation("primebank.terminal.balance", Money.formatUsd(bal)));
                 playerIn.sendMessage(new TextComponentTranslation("primebank.terminal.prompt_deposit"));
+            }
+        } else {
+            // English: Client-side: open merchant charge GUI when not sneaking.
+            // Español: Lado cliente: abrir GUI de cobro del comerciante cuando no está agachado.
+            if (!playerIn.isSneaking()) {
+                Minecraft.getMinecraft().displayGuiScreen(new GuiTerminalCharge());
             }
         }
         return true;

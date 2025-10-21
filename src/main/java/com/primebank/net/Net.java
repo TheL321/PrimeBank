@@ -20,5 +20,6 @@ public final class Net {
         // Español: Registrar paquetes S2C de aviso POS y C2S de respuesta POS.
         PrimeBankMod.NETWORK.registerMessage(PacketPosPrompt.Handler.class, PacketPosPrompt.class, ID++, Side.CLIENT);
         PrimeBankMod.NETWORK.registerMessage(PacketPosRespond.Handler.class, PacketPosRespond.class, ID++, Side.SERVER);
+        PrimeBankMod.NETWORK.registerMessage(PacketSetPendingCharge.Handler.class, PacketSetPendingCharge.class, ID++, Side.SERVER);
     }
 }

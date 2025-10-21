@@ -56,6 +56,23 @@ primebank.pos.prompt.title=Confirm POS Charge
 primebank.pos.prompt.amount=Amount: %s
 primebank.pos.result.accepted=POS charge accepted
 primebank.pos.result.cancelled=POS charge cancelled
+primebank.pos.prompt.merchant=Merchant: %s
+primebank.pos.pending.set=Pending charge set: %s
+primebank.pos.pending.cleared=Pending charge cleared
+primebank.pos.pending.bad_amount=Invalid amount
+primebank.pos.error.not_linked=POS not linked to a company
+primebank.pos.error.no_pending=No pending charge set
+primebank.pos.linked=POS linked to company %s
+primebank.pos.linked.already=POS already linked to company %s
+
+# UI buttons
+ui.primebank.ok=Confirm
+ui.primebank.cancel=Cancel
+ui.primebank.charge=Charge
+
+# Terminal merchant charge GUI
+primebank.pos.terminal.title=Enter Amount to Charge
+primebank.pos.terminal.hint=Type an amount like 10 or 10.50 and press Charge
 
 # Terminal
 primebank.terminal.balance=PrimeBank Terminal — Balance: %s

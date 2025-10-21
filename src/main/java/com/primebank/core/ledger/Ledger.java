@@ -25,6 +25,47 @@ public final class Ledger {
     }
 
     /*
+     English: POS charge: withdraw full amount from buyer, deposit 95% to company and 5% to central atomically.
+     Español: Cobro POS: retirar el monto completo del comprador, depositar 95% a la empresa y 5% al banco central atómicamente.
+    */
+    public TransferResult posCharge(String buyerId, String companyId, long amountCents) {
+        if (amountCents <= 0) {
+            return new TransferResult(false, "amount_le_zero", "Amount must be > 0", false, 0);
+        }
+        if (buyerId == null || companyId == null || buyerId.equals(companyId)) {
+            return new TransferResult(false, "invalid_accounts", "Invalid accounts", false, 0);
+        }
+        Account buyer = accounts.get(buyerId);
+        Account company = accounts.get(companyId);
+        if (buyer == null || company == null) {
+            return new TransferResult(false, "account_not_found", "Account not found", false, 0);
+        }
+        String centralId = PrimeBankState.CENTRAL_ACCOUNT_ID;
+        Account central = accounts.get(centralId);
+        if (central == null) central = PrimeBankState.get().ensureCentralAccount();
+
+        List<String> keys = new ArrayList<>();
+        keys.add(buyerId); keys.add(companyId); keys.add(centralId);
+        Collections.sort(keys);
+        List<ReentrantLock> locks = new ArrayList<>(keys.size());
+        for (String k : keys) { ReentrantLock l = AccountLockManager.getLock(k); l.lock(); locks.add(l); }
+        try {
+            long bal = buyer.getBalanceCents();
+            if (bal < amountCents) {
+                return new TransferResult(false, "insufficient", "Insufficient funds", false, 0);
+            }
+            long toCompany = Money.multiplyBps(amountCents, 9500);
+            long toCentral = Money.add(amountCents, -toCompany);
+            buyer.withdraw(amountCents);
+            company.deposit(toCompany);
+            if (toCentral > 0) central.deposit(toCentral);
+            return new TransferResult(true, "ok", "Transfer completed", false, 0);
+        } finally {
+            for (int i = locks.size() - 1; i >= 0; i--) locks.get(i).unlock();
+        }
+    }
+
+    /*
      English: Result of a deposit or withdraw operation.
      Español: Resultado de una operación de depósito o retiro.
     */

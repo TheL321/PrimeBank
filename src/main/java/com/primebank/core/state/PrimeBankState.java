@@ -17,6 +17,7 @@ public final class PrimeBankState {
     public static final String CENTRAL_ACCOUNT_ID = "central";
 
     private final AccountRegistry accounts = new AccountRegistry();
+    private final java.util.concurrent.ConcurrentHashMap<String, Long> posPending = new java.util.concurrent.ConcurrentHashMap<>();
 
     private PrimeBankState() {}
 
@@ -31,6 +32,20 @@ public final class PrimeBankState {
     }
 
     public AccountRegistry accounts() { return accounts; }
+
+    /*
+     English: Set/get/clear pending POS charges by company id (cents).
+     Español: Establecer/obtener/limpiar cargos POS pendientes por id de empresa (centavos).
+    */
+    public void setPendingCharge(String companyId, long cents) {
+        if (companyId == null) return;
+        if (cents <= 0) { posPending.remove(companyId); } else { posPending.put(companyId, cents); }
+    }
+    public long getPendingCharge(String companyId) {
+        Long v = posPending.get(companyId);
+        return v == null ? 0L : v.longValue();
+    }
+    public void clearPendingCharge(String companyId) { if (companyId != null) posPending.remove(companyId); }
 
     public Account ensureCentralAccount() {
         if (!accounts.exists(CENTRAL_ACCOUNT_ID)) {

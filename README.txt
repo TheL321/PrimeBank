@@ -51,3 +51,37 @@ https://www.youtube.com/watch?v=8VEdtQLuLO0&feature=youtu.be
 
 For more details update more often refer to the Forge Forums:
 http://www.minecraftforge.net/forum/index.php/topic,14048.0.html
+
+====================================
+PrimeBank Usage / Uso de PrimeBank
+====================================
+
+English: The PrimeBank mod provides simple banking commands and currency items. Amounts are in cents (long). Commands support tab-completion for subcommands, usernames (online), and common amounts.
+Español: El mod PrimeBank provee comandos bancarios simples y objetos de moneda. Los montos están en centavos (long). Los comandos soportan autocompletado para subcomandos, usuarios (en línea) y montos comunes.
+
+Commands / Comandos:
+- /primebank balance
+  English: Show your account balance.
+  Español: Muestra tu saldo de cuenta.
+
+- /primebank depositcents <cents>
+  English: Converts currency items from your inventory into balance. If you lack enough currency items to cover the amount, the command fails.
+  Español: Convierte objetos de moneda de tu inventario en saldo. Si no tienes suficiente moneda para cubrir el monto, el comando falla.
+
+- /primebank withdrawcents <cents>
+  English: Withdraws currency items into your inventory using denominations. If inventory is full, overflow is dropped near you.
+  Español: Retira objetos de moneda a tu inventario usando denominaciones. Si el inventario está lleno, el excedente se suelta cerca de ti.
+
+- /primebank transfercents <username|uuid> <cents>
+  English: Transfers cents to another player by username (online) or UUID. Tab-completion suggests online usernames. Offline UUIDs are supported.
+  Español: Transfiere centavos a otro jugador por nombre (en línea) o UUID. El autocompletado sugiere nombres en línea. Se soportan UUIDs offline.
+
+- /primebank reload
+  English: Reloads configuration/state as supported by the server.
+  Español: Recarga configuración/estado según lo soportado por el servidor.
+
+Notes / Notas:
+- English: All amounts are integers in cents to avoid float rounding.
+  Español: Todos los montos son enteros en centavos para evitar redondeos de flotantes.
+- English: Currency items appear in the PrimeBank creative tab.
+  Español: Los objetos de moneda aparecen en la pestaña creativa de PrimeBank.
