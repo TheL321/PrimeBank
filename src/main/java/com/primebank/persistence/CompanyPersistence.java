@@ -26,6 +26,14 @@ public final class CompanyPersistence {
                 Company c = JsonUtil.read(f, Company.class);
                 if (c != null && c.id != null) {
                     PrimeBankState.get().companies().put(c);
+                    // English: If there's a stored company name and no display mapping yet, set it so UIs (POS) show it.
+                    // Español: Si hay nombre almacenado y no hay mapeo visible aún, establecerlo para que las UIs (POS) lo muestren.
+                    if (c.name != null && !c.name.trim().isEmpty()) {
+                        String existing = PrimeBankState.get().getCompanyName(c.id);
+                        if (existing == null || existing.trim().isEmpty()) {
+                            PrimeBankState.get().setCompanyName(c.id, c.name.trim());
+                        }
+                    }
                     n++;
                 }
             }

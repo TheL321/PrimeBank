@@ -42,7 +42,13 @@ public class PacketPosChargeInitiate implements IMessage {
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.not_linked"));
                     return;
                 }
+                // English: Determine charge amount with precedence: per-POS price > global company pending.
+                // Español: Determinar el monto con prioridad: precio por POS > pendiente global de la empresa.
                 long cents = t.pendingCents;
+                if (cents <= 0) {
+                    long global = com.primebank.core.state.PrimeBankState.get().getPendingCharge(companyId);
+                    cents = global;
+                }
                 if (cents <= 0) {
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.no_pending"));
                     return;

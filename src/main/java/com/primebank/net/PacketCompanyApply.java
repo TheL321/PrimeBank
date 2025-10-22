@@ -48,7 +48,15 @@ public class PacketCompanyApply implements IMessage {
                 c.description = message.desc == null ? null : message.desc.trim();
                 c.appliedAt = System.currentTimeMillis();
                 c.approved = false;
+                // English: Update display name mapping so POS and UIs show it immediately.
+                // Español: Actualizar el mapeo de nombre visible para que POS y UIs lo muestren de inmediato.
+                if (c.name != null && !c.name.isEmpty()) {
+                    PrimeBankState.get().setCompanyName(c.id, c.name);
+                }
                 CompanyPersistence.saveCompany(c);
+                // English: Persist snapshot including company display names.
+                // Español: Persistir snapshot incluyendo los nombres visibles de empresas.
+                com.primebank.persistence.BankPersistence.saveAllAsync();
                 p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.company.apply.submitted"));
             });
             return null;
