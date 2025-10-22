@@ -259,7 +259,9 @@ public class GuiCompanyDetails extends GuiScreen {
     private void adjustButtonPositions(int contentBottomY) {
         if (btnBuy == null || btnRefresh == null || btnClose == null) return;
         int defaultTop = this.height / 2 + 20;
+        int maxTop = this.height - 72;
         int safeTop = Math.max(defaultTop, contentBottomY + 12);
+        if (safeTop > maxTop) safeTop = maxTop;
         btnBuy.y = safeTop;
         btnRefresh.y = safeTop + 24;
         btnClose.y = safeTop + 24;
