@@ -37,6 +37,27 @@ public final class CompanyPersistence {
                             c.valuationHistoryCents.remove(0);
                         }
                     }
+                    // English: Normalize possible old/edited JSON to avoid wiping valuations.
+                    // Español: Normalizar posibles JSON antiguos/editados para evitar borrar valoraciones.
+                    for (int i = 0; i < c.valuationHistoryCents.size(); i++) {
+                        Long v = c.valuationHistoryCents.get(i);
+                        if (v == null || v.longValue() < 0L) c.valuationHistoryCents.set(i, 0L);
+                    }
+                    if (!c.valuationHistoryCents.isEmpty()) {
+                        long lastVal = c.valuationHistoryCents.get(c.valuationHistoryCents.size() - 1);
+                        if (c.valuationCurrentCents <= 0L && lastVal > 0L) {
+                            // English: Restore current valuation from last history point if missing.
+                            // Español: Restaurar valoración actual desde el último punto del historial si falta.
+                            c.valuationCurrentCents = lastVal;
+                        }
+                        if (c.lastValuationAt <= 0L && c.approvedAt > 0L) {
+                            // English: Approximate last valuation timestamp from approvedAt and history length.
+                            // Español: Aproximar la marca de tiempo de la última valoración desde approvedAt y longitud del historial.
+                            long DAY_MS = 24L * 60L * 60L * 1000L;
+                            int histCount = c.valuationHistoryCents.size();
+                            c.lastValuationAt = c.approvedAt + 8L * DAY_MS + (long) Math.max(0, histCount - 1) * 7L * DAY_MS;
+                        }
+                    }
                     PrimeBankState.get().companies().put(c);
                     // English: If there's a stored company name and no display mapping yet, set it so UIs (POS) show it.
                     // Español: Si hay nombre almacenado y no hay mapeo visible aún, establecerlo para que las UIs (POS) lo muestren.

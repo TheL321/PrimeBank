@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.google.gson.annotations.SerializedName;
+
 /*
  English: Company model persisted per file in world/primebank/companies/.
  Español: Modelo de empresa persistido por archivo en world/primebank/companies/.
@@ -21,6 +23,7 @@ public class Company {
     public long salesWeekCents;        // accumulator for current period sales
     public long valuationCurrentCents; // V
     public long lastValuationAt;       // ms epoch for last valuation
+    @SerializedName(value = "valuationHistoryCents", alternate = {"valuationHistory"})
     public List<Long> valuationHistoryCents = new ArrayList<>(); // last 26 values
 
     // English: Basic share model — track per-holder shares. Owner gets 101 on approval.
