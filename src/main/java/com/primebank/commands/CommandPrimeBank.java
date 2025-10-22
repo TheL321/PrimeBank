@@ -58,7 +58,7 @@ public class CommandPrimeBank extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|reload>";
+        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|adminapprove <player|uuid>|setcashbackbps <bps>|marketlist <shares> [companyId]|marketbuy <companyId> <shares>|reload>";
     }
 
     @Override
@@ -176,6 +176,81 @@ public class CommandPrimeBank extends CommandBase {
                 PersistencePaths.setWorldDir(worldDir);
                 BankPersistence.loadAll();
                 sender.sendMessage(new TextComponentTranslation("primebank.reload.ok"));
+                break;
+            }
+            case "adminapprove": {
+                // English: Admin-only: approve a company's default id for given player/uuid and grant 101 shares to owner.
+                // Español: Solo admin: aprobar la empresa por defecto del jugador/uuid y otorgar 101 acciones al dueño.
+                if (!com.primebank.core.admin.AdminService.isAdmin(me, server, sender)) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.admin.not_admin"));
+                    break;
+                }
+                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
+                UUID who;
+                try { who = java.util.UUID.fromString(args[1]); }
+                catch (IllegalArgumentException ex) { who = resolveUsernameToUuid(server, args[1]); }
+                String cid = CompanyAccounts.ensureDefault(who);
+                com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies().ensureDefault(who);
+                c.approved = true;
+                c.approvedAt = System.currentTimeMillis();
+                c.ownerUuid = who;
+                c.holdings.put(who.toString(), 101);
+                com.primebank.persistence.CompanyPersistence.saveCompany(c);
+                sender.sendMessage(new TextComponentTranslation("primebank.admin.company.approved", cid));
+                break;
+            }
+            case "setcashbackbps": {
+                // English: Admin-only: set global cashback in basis points for POS purchases (credited to buyer from central).
+                // Español: Solo admin: establecer cashback global en puntos básicos para compras POS (acreditado al comprador desde el central).
+                if (!com.primebank.core.admin.AdminService.isAdmin(me, server, sender)) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.admin.not_admin"));
+                    break;
+                }
+                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
+                int bps;
+                try { bps = Integer.parseInt(args[1]); } catch (NumberFormatException e) { sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[1])); break; }
+                if (bps < 0) bps = 0;
+                com.primebank.core.state.PrimeBankState.get().setGlobalCashbackBps(bps);
+                BankPersistence.saveAllAsync();
+                sender.sendMessage(new TextComponentTranslation("primebank.admin.cashback.set", bps));
+                break;
+            }
+            case "marketlist": {
+                // English: Owner lists shares for sale on primary market.
+                // Español: El dueño lista acciones para la venta en mercado primario.
+                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
+                int shares;
+                try { shares = Integer.parseInt(args[1]); } catch (NumberFormatException e) { sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[1])); break; }
+                if (shares <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); break; }
+                java.util.UUID owner = me;
+                String companyId = args.length >= 3 ? args[2] : com.primebank.core.accounts.CompanyAccounts.ensureDefault(owner);
+                com.primebank.market.MarketPrimaryService.Result r = com.primebank.market.MarketPrimaryService.get().listShares(owner, companyId, shares);
+                if (r.ok) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.market.list.ok", shares, companyLabel(server, companyId)));
+                } else {
+                    sender.sendMessage(new TextComponentTranslation("primebank.market.list.error." + r.error));
+                }
+                break;
+            }
+            case "marketbuy": {
+                // English: Buyer purchases shares from company's listed inventory.
+                // Español: Comprador adquiere acciones del inventario listado de la empresa.
+                if (args.length < 3) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
+                String companyId = args[1];
+                int shares;
+                try { shares = Integer.parseInt(args[2]); } catch (NumberFormatException e) { sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[2])); break; }
+                if (shares <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); break; }
+                java.util.UUID buyer = me;
+                // Precompute display price for feedback (best-effort).
+                com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies().get(companyId);
+                long pps = (c == null) ? 0L : (c.valuationCurrentCents / 101L);
+                long gross = pps * shares;
+                com.primebank.market.MarketPrimaryService.Result r = com.primebank.market.MarketPrimaryService.get().buyShares(buyer, companyId, shares);
+                if (r.ok) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.market.buy.ok", shares, companyLabel(server, companyId), com.primebank.core.Money.formatUsd(pps), com.primebank.core.Money.formatUsd(gross)));
+                } else {
+                    sender.sendMessage(new TextComponentTranslation("primebank.market.buy.error." + r.error));
+                }
                 break;
             }
             default:

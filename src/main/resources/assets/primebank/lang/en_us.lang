@@ -73,17 +73,33 @@ primebank.pos.config.hint=Enter an amount like 10 or 10.50 and press OK
 primebank.pos.price.set=POS price set: %s
 primebank.pos.price.bad_amount=Invalid price amount
 primebank.pos.price.not_owner=Only the company owner can configure this POS
+primebank.pos.result.cashback=Cashback credited: %s
+primebank.pos.error.company_not_approved=Company not approved yet
 
 # UI buttons
 ui.primebank.ok=Confirm
 ui.primebank.cancel=Cancel
 ui.primebank.charge=Charge
+ui.primebank.menu.charge=Merchant Charge
+ui.primebank.menu.apply_company=Apply for Company
+ui.primebank.menu.market=Open Market
 
 # Terminal merchant charge GUI
 primebank.pos.terminal.title=Enter Amount to Charge
 primebank.pos.terminal.hint=Type an amount like 10 or 10.50 and press Charge
 
 # Terminal
+
+# Company apply
+primebank.company.apply.title=Company Application
+primebank.company.apply.hint=Enter a name and optional description
+primebank.company.apply.bad_name=Please enter a company name
+primebank.company.apply.submitted=Application submitted for approval
+
+# Admin
+primebank.admin.not_admin=You are not an admin
+primebank.admin.company.approved=Company approved: %s
+primebank.admin.cashback.set=Global cashback set to %s bps
 primebank.terminal.balance=PrimeBank Terminal — Balance: %s
 primebank.terminal.prompt_deposit=Sneak to deposit all cash
 primebank.terminal.no_cash=No cash to deposit
@@ -94,6 +110,25 @@ primebank.company.balance=Company %s — Balance: %s
 primebank.company.name.current=Company %s — Current name: %s
 primebank.company.name.set=Company name set to: %s
 primebank.company.name.cleared=Company display name cleared
+
+# Market (primary)
+primebank.market.home.title=Market (Primary)
+primebank.market.list.ok=Listed %s shares for %s
+primebank.market.list.error.bad_args=Invalid arguments
+primebank.market.list.error.company_not_found=Company not found
+primebank.market.list.error.not_owner=Only the owner can list shares
+primebank.market.list.error.trading_blocked=Trading is blocked until first valuation
+primebank.market.list.error.over_limit=Listing exceeds owner limit (keep 51 minimum)
+primebank.market.list.error.over_slot=Listing exceeds 50 share slot
+primebank.market.buy.ok=Purchased %s shares in %s @ %s each (gross %s)
+primebank.market.buy.error.bad_args=Invalid arguments
+primebank.market.buy.error.company_not_found=Company not found
+primebank.market.buy.error.trading_blocked=Trading is blocked until first valuation
+primebank.market.buy.error.not_enough_listed=Not enough shares listed
+primebank.market.buy.error.insufficient=Insufficient funds
+primebank.market.buy.error.ledger_error=Payment failed
+primebank.market.buy.error.company_no_owner=Company has no owner set
+primebank.market.buy.error.majority_violation=Operation would violate majority rule
 
 # Card owner enforcement
 primebank.card.required=You must hold a PrimeBank Card to pay

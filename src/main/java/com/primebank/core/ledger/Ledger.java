@@ -25,6 +25,72 @@ public final class Ledger {
     }
 
     /*
+     English: Apply cashback to buyer funded by the central bank, atomically (min with central balance).
+     Español: Aplicar cashback al comprador financiado por el banco central, atómicamente (mínimo con saldo del central).
+    */
+    public OpResult applyCashbackToBuyer(String buyerId, long cashbackCents) {
+        if (cashbackCents <= 0) return new OpResult(true, "ok", "No cashback");
+        String centralId = PrimeBankState.CENTRAL_ACCOUNT_ID;
+        Account buyer = accounts.get(buyerId);
+        Account central = accounts.get(centralId);
+        if (buyer == null || central == null) central = PrimeBankState.get().ensureCentralAccount();
+        List<String> keys = new ArrayList<>();
+        keys.add(buyerId); keys.add(centralId);
+        Collections.sort(keys);
+        List<ReentrantLock> locks = new ArrayList<>(keys.size());
+        for (String k : keys) { ReentrantLock l = com.primebank.core.locks.AccountLockManager.getLock(k); l.lock(); locks.add(l); }
+        try {
+            long centralBal = central.getBalanceCents();
+            long amt = Math.min(cashbackCents, Math.max(0, centralBal));
+            if (amt <= 0) return new OpResult(false, "central_insufficient", "Central has no funds");
+            central.withdraw(amt);
+            buyer.deposit(amt);
+            return new OpResult(true, "ok", "Cashback applied");
+        } finally {
+            for (int i = locks.size() - 1; i >= 0; i--) locks.get(i).unlock();
+        }
+    }
+
+    /*
+     English: Primary market buy: buyer pays gross + buyerFee; company receives gross - issuerFee; fees to central.
+     Español: Compra en mercado primario: comprador paga bruto + comisión comprador; empresa recibe bruto - comisión emisor; comisiones al central.
+    */
+    public TransferResult marketPrimaryBuy(String buyerId, String companyId, long grossCents, int buyerFeeBps, int issuerFeeBps) {
+        if (grossCents <= 0) return new TransferResult(false, "amount_le_zero", "Amount must be > 0", false, 0);
+        if (buyerId == null || companyId == null || buyerId.equals(companyId)) {
+            return new TransferResult(false, "invalid_accounts", "Invalid accounts", false, 0);
+        }
+        Account buyer = accounts.get(buyerId);
+        Account company = accounts.get(companyId);
+        if (buyer == null || company == null) return new TransferResult(false, "account_not_found", "Account not found", false, 0);
+        String centralId = PrimeBankState.CENTRAL_ACCOUNT_ID;
+        Account central = accounts.get(centralId);
+        if (central == null) central = PrimeBankState.get().ensureCentralAccount();
+
+        Set<String> keys = new HashSet<>();
+        keys.add(buyerId); keys.add(companyId); keys.add(centralId);
+        List<String> ordered = new ArrayList<>(keys);
+        Collections.sort(ordered);
+        List<ReentrantLock> locks = new ArrayList<>(ordered.size());
+        for (String k : ordered) { ReentrantLock l = com.primebank.core.locks.AccountLockManager.getLock(k); l.lock(); locks.add(l); }
+        try {
+            long buyerFee = Money.multiplyBps(grossCents, buyerFeeBps);
+            long issuerFee = Money.multiplyBps(grossCents, issuerFeeBps);
+            long totalDebit = Money.add(grossCents, buyerFee);
+            if (buyer.getBalanceCents() < totalDebit) {
+                return new TransferResult(false, "insufficient", "Insufficient funds", true, buyerFee);
+            }
+            buyer.withdraw(totalDebit);
+            company.deposit(Money.add(grossCents, -issuerFee));
+            long toCentral = Money.add(buyerFee, issuerFee);
+            if (toCentral > 0) central.deposit(toCentral);
+            return new TransferResult(true, "ok", "Market primary completed", true, buyerFee);
+        } finally {
+            for (int i = locks.size() - 1; i >= 0; i--) locks.get(i).unlock();
+        }
+    }
+
+    /*
      English: POS charge: withdraw full amount from buyer, deposit 95% to company and 5% to central atomically.
      Español: Cobro POS: retirar el monto completo del comprador, depositar 95% a la empresa y 5% al banco central atómicamente.
     */

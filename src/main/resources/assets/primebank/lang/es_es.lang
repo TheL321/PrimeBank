@@ -103,3 +103,42 @@ primebank.card.owner.mismatch=Esta tarjeta pertenece a otro jugador
 primebank.card.tooltip.unlinked=Sin vincular
 primebank.card.tooltip.owner=Dueño: %s
 primebank.card.tooltip.id=ID de Tarjeta: %s
+
+# Menú del terminal
+ui.primebank.menu.charge=Cobro del Comerciante
+ui.primebank.menu.apply_company=Solicitar Empresa
+ui.primebank.menu.market=Abrir Mercado
+
+# Cashback y aprobación
+primebank.pos.result.cashback=Cashback acreditado: %s
+primebank.pos.error.company_not_approved=Empresa aún no aprobada
+
+# Solicitud de empresa
+primebank.company.apply.title=Solicitud de Empresa
+primebank.company.apply.hint=Ingresa un nombre y una descripción opcional
+primebank.company.apply.bad_name=Por favor ingresa un nombre de empresa
+primebank.company.apply.submitted=Solicitud enviada para aprobación
+
+# Admin
+primebank.admin.not_admin=No eres administrador
+primebank.admin.company.approved=Empresa aprobada: %s
+primebank.admin.cashback.set=Cashback global establecido a %s bps
+
+# Mercado (primario)
+primebank.market.home.title=Mercado (Primario)
+primebank.market.list.ok=Listadas %s acciones para %s
+primebank.market.list.error.bad_args=Argumentos inválidos
+primebank.market.list.error.company_not_found=Empresa no encontrada
+primebank.market.list.error.not_owner=Solo el dueño puede listar acciones
+primebank.market.list.error.trading_blocked=El comercio está bloqueado hasta la primera valoración
+primebank.market.list.error.over_limit=El listado excede el límite del dueño (mantener 51 mínimo)
+primebank.market.list.error.over_slot=El listado excede el cupo de 50 acciones
+primebank.market.buy.ok=Compradas %s acciones en %s a %s cada una (bruto %s)
+primebank.market.buy.error.bad_args=Argumentos inválidos
+primebank.market.buy.error.company_not_found=Empresa no encontrada
+primebank.market.buy.error.trading_blocked=El comercio está bloqueado hasta la primera valoración
+primebank.market.buy.error.not_enough_listed=No hay suficientes acciones listadas
+primebank.market.buy.error.insufficient=Fondos insuficientes
+primebank.market.buy.error.ledger_error=Pago fallido
+primebank.market.buy.error.company_no_owner=La empresa no tiene dueño establecido
+primebank.market.buy.error.majority_violation=La operación violaría la regla de mayoría

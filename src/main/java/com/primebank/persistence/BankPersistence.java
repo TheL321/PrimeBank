@@ -47,6 +47,11 @@ public final class BankPersistence {
         if (snap.companyNames != null) {
             PrimeBankState.get().loadCompanyNames(snap.companyNames);
         }
+        // English: Load global cashback bps if present.
+        // Español: Cargar cashback global en bps si está presente.
+        if (snap.globalCashbackBps != null) {
+            PrimeBankState.get().setGlobalCashbackBps(snap.globalCashbackBps.intValue());
+        }
     }
 
     /*
@@ -85,6 +90,9 @@ public final class BankPersistence {
         // English: Include company display names.
         // Español: Incluir nombres visibles de empresas.
         snap.companyNames = new java.util.HashMap<>(PrimeBankState.get().getAllCompanyNames());
+        // English: Persist global cashback bps.
+        // Español: Persistir cashback global en bps.
+        snap.globalCashbackBps = PrimeBankState.get().getGlobalCashbackBps();
         JsonUtil.write(file, snap);
         PrimeBankMod.LOGGER.info("[PrimeBank] Snapshot saved: {} accounts / cuentas", snap.accounts.size());
     }
@@ -100,6 +108,8 @@ public final class BankPersistence {
         public java.util.Map<String, Long> posPending;
         @SerializedName("companyNames")
         public java.util.Map<String, String> companyNames;
+        @SerializedName("globalCashbackBps")
+        public Integer globalCashbackBps;
     }
 
     public static class AccountRecord {

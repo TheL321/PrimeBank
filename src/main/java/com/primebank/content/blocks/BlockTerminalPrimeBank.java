@@ -57,10 +57,10 @@ public class BlockTerminalPrimeBank extends Block {
                 playerIn.sendMessage(new TextComponentTranslation("primebank.terminal.prompt_deposit"));
             }
         } else {
-            // English: Client-side: open merchant charge GUI when not sneaking.
-            // Español: Lado cliente: abrir GUI de cobro del comerciante cuando no está agachado.
+            // English: Client-side: open terminal menu when not sneaking.
+            // Español: Lado cliente: abrir menú del terminal cuando no está agachado.
             if (!playerIn.isSneaking()) {
-                Minecraft.getMinecraft().displayGuiScreen(new GuiTerminalCharge());
+                Minecraft.getMinecraft().displayGuiScreen(new com.primebank.client.gui.GuiTerminalMenu());
             }
         }
         return true;

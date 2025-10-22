@@ -54,6 +54,9 @@ public class BlockPOSPrimeBank extends Block {
                 boolean holdingCard = heldSrv != null && heldSrv.getItem() instanceof ItemCard;
                 if (!holdingCard) {
                     String companyId = CompanyAccounts.ensureDefault(playerIn.getUniqueID());
+                    // English: Ensure a company record exists in the registry for approvals/market.
+                    // Español: Asegurar que exista un registro de empresa en el registro para aprobaciones/mercado.
+                    com.primebank.core.state.PrimeBankState.get().companies().ensureDefault(playerIn.getUniqueID());
                     t.companyId = companyId;
                     t.markDirty();
                     // English: Show friendly label: display name > owner's username > raw id.

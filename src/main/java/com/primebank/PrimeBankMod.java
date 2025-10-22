@@ -74,6 +74,9 @@ public class PrimeBankMod {
         File worldDir = event.getServer().getEntityWorld().getSaveHandler().getWorldDirectory();
         PersistencePaths.setWorldDir(worldDir);
         BankPersistence.loadAll();
+        com.primebank.core.admin.AdminService.reload(event.getServer().getDataDirectory());
+        com.primebank.persistence.CompanyPersistence.loadAll();
+        com.primebank.market.ValuationService.get().start();
         event.registerServerCommand(new CommandPrimeBank());
     }
 
@@ -84,5 +87,7 @@ public class PrimeBankMod {
          Español: Parada del servidor: guarda snapshot en disco.
         */
         BankPersistence.saveAllBlocking();
+        com.primebank.persistence.CompanyPersistence.saveAll();
+        com.primebank.market.ValuationService.get().stop();
     }
 }

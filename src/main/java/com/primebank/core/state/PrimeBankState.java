@@ -19,6 +19,8 @@ public final class PrimeBankState {
     private final AccountRegistry accounts = new AccountRegistry();
     private final java.util.concurrent.ConcurrentHashMap<String, Long> posPending = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<String, String> companyNames = new java.util.concurrent.ConcurrentHashMap<>();
+    private final com.primebank.core.company.CompanyRegistry companies = new com.primebank.core.company.CompanyRegistry();
+    private volatile int globalCashbackBps = 0;
 
     private PrimeBankState() {}
 
@@ -33,6 +35,19 @@ public final class PrimeBankState {
     }
 
     public AccountRegistry accounts() { return accounts; }
+
+    /*
+     English: Access the in-memory registry of companies.
+     Español: Acceder al registro en memoria de empresas.
+    */
+    public com.primebank.core.company.CompanyRegistry companies() { return companies; }
+
+    /*
+     English: Global cashback (bps) applied to POS purchases and credited to buyer from central.
+     Español: Cashback global (bps) aplicado a compras POS y acreditado al comprador desde el central.
+    */
+    public int getGlobalCashbackBps() { return globalCashbackBps; }
+    public void setGlobalCashbackBps(int bps) { this.globalCashbackBps = Math.max(0, bps); }
 
     /*
      English: Set/get/clear pending POS charges by company id (cents).

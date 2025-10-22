@@ -26,5 +26,8 @@ public final class Net {
         PrimeBankMod.NETWORK.registerMessage(PacketPosOpenConfigRequest.Handler.class, PacketPosOpenConfigRequest.class, ID++, Side.SERVER);
         PrimeBankMod.NETWORK.registerMessage(PacketOpenPosConfig.Handler.class, PacketOpenPosConfig.class, ID++, Side.CLIENT);
         PrimeBankMod.NETWORK.registerMessage(PacketPosSetPrice.Handler.class, PacketPosSetPrice.class, ID++, Side.SERVER);
+        // English: Company application packet (C2S).
+        // Español: Paquete de solicitud de empresa (C2S).
+        PrimeBankMod.NETWORK.registerMessage(PacketCompanyApply.Handler.class, PacketCompanyApply.class, ID++, Side.SERVER);
     }
 }
