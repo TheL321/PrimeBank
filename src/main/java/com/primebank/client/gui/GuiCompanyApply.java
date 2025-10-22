@@ -1,6 +1,7 @@
 package com.primebank.client.gui;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
@@ -19,6 +20,7 @@ import com.primebank.net.PacketCompanyApply;
 public class GuiCompanyApply extends GuiScreen {
     private GuiTextField name;
     private GuiTextField desc;
+    private GuiTextField shortName;
     private GuiButton btnSubmit;
     private GuiButton btnCancel;
 
@@ -32,8 +34,11 @@ public class GuiCompanyApply extends GuiScreen {
         this.name.setMaxStringLength(64);
         this.desc = new GuiTextField(2, this.fontRenderer, midX - 100, midY, 200, 20);
         this.desc.setMaxStringLength(128);
-        this.btnSubmit = new GuiButton(0, midX - 100, midY + 30, 90, 20, I18n.format("ui.primebank.ok"));
-        this.btnCancel = new GuiButton(1, midX + 10, midY + 30, 90, 20, I18n.format("ui.primebank.cancel"));
+        this.shortName = new GuiTextField(3, this.fontRenderer, midX - 100, midY + 30, 200, 18);
+        this.shortName.setMaxStringLength(12);
+        this.shortName.setText("");
+        this.btnSubmit = new GuiButton(0, midX - 100, midY + 60, 90, 20, I18n.format("ui.primebank.ok"));
+        this.btnCancel = new GuiButton(1, midX + 10, midY + 60, 90, 20, I18n.format("ui.primebank.cancel"));
         this.buttonList.add(btnSubmit);
         this.buttonList.add(btnCancel);
     }
@@ -42,12 +47,18 @@ public class GuiCompanyApply extends GuiScreen {
     public void updateScreen() {
         if (this.name != null) this.name.updateCursorCounter();
         if (this.desc != null) this.desc.updateCursorCounter();
+        if (this.shortName != null) this.shortName.updateCursorCounter();
     }
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
         if (this.name != null && this.name.textboxKeyTyped(typedChar, keyCode)) return;
         if (this.desc != null && this.desc.textboxKeyTyped(typedChar, keyCode)) return;
+        if (this.shortName != null && this.shortName.textboxKeyTyped(typedChar, keyCode)) {
+            String sanitized = sanitizeTicker(this.shortName.getText());
+            this.shortName.setText(sanitized);
+            return;
+        }
         super.keyTyped(typedChar, keyCode);
     }
 
@@ -56,6 +67,7 @@ public class GuiCompanyApply extends GuiScreen {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (this.name != null) this.name.mouseClicked(mouseX, mouseY, mouseButton);
         if (this.desc != null) this.desc.mouseClicked(mouseX, mouseY, mouseButton);
+        if (this.shortName != null) this.shortName.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
@@ -65,8 +77,13 @@ public class GuiCompanyApply extends GuiScreen {
         String hint = I18n.format("primebank.company.apply.hint");
         drawCenteredString(this.fontRenderer, title, this.width / 2, this.height / 2 - 60, 0xFFFFFF);
         drawCenteredString(this.fontRenderer, hint, this.width / 2, this.height / 2 - 48, 0xAAAAAA);
+        String shortLabel = I18n.format("primebank.company.apply.short_label");
+        drawCenteredString(this.fontRenderer, shortLabel, this.width / 2, this.height / 2 + 12, 0xFFFFFF);
+        String shortHint = I18n.format("primebank.company.apply.short_hint");
+        drawCenteredString(this.fontRenderer, shortHint, this.width / 2, this.height / 2 + 22, 0xAAAAAA);
         if (this.name != null) this.name.drawTextBox();
         if (this.desc != null) this.desc.drawTextBox();
+        if (this.shortName != null) this.shortName.drawTextBox();
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
@@ -75,11 +92,16 @@ public class GuiCompanyApply extends GuiScreen {
         if (button == btnSubmit) {
             String n = this.name.getText() == null ? "" : this.name.getText().trim();
             String d = this.desc.getText() == null ? "" : this.desc.getText().trim();
+            String ticker = sanitizeTicker(this.shortName.getText());
             if (n.isEmpty()) {
                 Minecraft.getMinecraft().player.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_name"));
                 return;
             }
-            PrimeBankMod.NETWORK.sendToServer(new PacketCompanyApply(n, d));
+            if (ticker.length() < 2 || ticker.length() > 8) {
+                Minecraft.getMinecraft().player.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_short"));
+                return;
+            }
+            PrimeBankMod.NETWORK.sendToServer(new PacketCompanyApply(n, d, ticker));
             close();
         } else if (button == btnCancel) {
             close();
@@ -90,4 +112,10 @@ public class GuiCompanyApply extends GuiScreen {
 
     @Override
     public boolean doesGuiPauseGame() { return false; }
+
+    private String sanitizeTicker(String raw) {
+        if (raw == null) return "";
+        String cleaned = raw.replaceAll("[^A-Za-z0-9]", "");
+        return cleaned.toUpperCase(Locale.ROOT);
+    }
 }

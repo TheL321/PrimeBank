@@ -1,6 +1,7 @@
 package com.primebank.persistence;
 
 import java.io.File;
+import java.util.Locale;
 
 import com.primebank.PrimeBankMod;
 import com.primebank.core.company.Company;
@@ -37,6 +38,13 @@ public final class CompanyPersistence {
                             c.valuationHistoryCents.remove(0);
                         }
                     }
+                    if (c.shortName != null) {
+                        c.shortName = c.shortName.replaceAll("[^A-Za-z0-9]", "");
+                        c.shortName = c.shortName.trim().toUpperCase(Locale.ROOT);
+                        if (c.shortName.isEmpty()) {
+                            c.shortName = null;
+                        }
+                    }
                     // English: Normalize possible old/edited JSON to avoid wiping valuations.
                     // Español: Normalizar posibles JSON antiguos/editados para evitar borrar valoraciones.
                     for (int i = 0; i < c.valuationHistoryCents.size(); i++) {
@@ -66,6 +74,9 @@ public final class CompanyPersistence {
                         if (existing == null || existing.trim().isEmpty()) {
                             PrimeBankState.get().setCompanyName(c.id, c.name.trim());
                         }
+                    }
+                    if (c.shortName != null && !c.shortName.isEmpty()) {
+                        PrimeBankState.get().setCompanyShortName(c.id, c.shortName);
                     }
                     n++;
                 }

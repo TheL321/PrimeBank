@@ -47,6 +47,11 @@ public final class BankPersistence {
         if (snap.companyNames != null) {
             PrimeBankState.get().loadCompanyNames(snap.companyNames);
         }
+        // English: Load company short names if present.
+        // Español: Cargar nombres cortos de empresas si existen.
+        if (snap.companyShortNames != null) {
+            PrimeBankState.get().loadCompanyShortNames(snap.companyShortNames);
+        }
         // English: Load global cashback bps if present.
         // Español: Cargar cashback global en bps si está presente.
         if (snap.globalCashbackBps != null) {
@@ -90,6 +95,9 @@ public final class BankPersistence {
         // English: Include company display names.
         // Español: Incluir nombres visibles de empresas.
         snap.companyNames = new java.util.HashMap<>(PrimeBankState.get().getAllCompanyNames());
+        // English: Include company short names.
+        // Español: Incluir nombres cortos de empresas.
+        snap.companyShortNames = new java.util.HashMap<>(PrimeBankState.get().getAllCompanyShortNames());
         // English: Persist global cashback bps.
         // Español: Persistir cashback global en bps.
         snap.globalCashbackBps = PrimeBankState.get().getGlobalCashbackBps();
@@ -108,6 +116,8 @@ public final class BankPersistence {
         public java.util.Map<String, Long> posPending;
         @SerializedName("companyNames")
         public java.util.Map<String, String> companyNames;
+        @SerializedName("companyShortNames")
+        public java.util.Map<String, String> companyShortNames;
         @SerializedName("globalCashbackBps")
         public Integer globalCashbackBps;
     }

@@ -42,6 +42,7 @@ public class CommandPrimeBank extends CommandBase {
     */
     private String companyLabel(MinecraftServer server, String companyId) {
         String disp = PrimeBankState.get().getCompanyName(companyId);
+        String ticker = PrimeBankState.get().getCompanyShortName(companyId);
         if (disp != null && !disp.isEmpty()) return disp;
         if (companyId != null && companyId.startsWith("c:")) {
             try {
@@ -53,12 +54,16 @@ public class CommandPrimeBank extends CommandBase {
                 if (gp != null && gp.getName() != null) return gp.getName();
             } catch (Exception ignored) {}
         }
-        return companyId;
+        String base = companyId;
+        if (ticker != null && !ticker.trim().isEmpty()) {
+            base = String.format("%s (%s)", base, ticker.trim());
+        }
+        return base;
     }
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|adminapprove <player|uuid>|setcashbackbps <bps>|marketlist <shares> [companyId]|marketbuy <companyId> <shares>|reload>";
+        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <player|uuid>|setcashbackbps <bps>|marketlist <shares> [companyId]|marketbuy <companyId> <shares>|reload>";
     }
 
     @Override
@@ -89,8 +94,10 @@ public class CommandPrimeBank extends CommandBase {
                 String companyId = CompanyAccounts.ensureDefault(me);
                 if (args.length < 2) {
                     String current = PrimeBankState.get().getCompanyName(companyId);
+                    String currentTicker = PrimeBankState.get().getCompanyShortName(companyId);
                     String label = companyLabel(server, companyId);
                     sender.sendMessage(new TextComponentTranslation("primebank.company.name.current", label, current == null ? "" : current));
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_current", label, currentTicker == null ? "" : currentTicker));
                     break;
                 }
                 String arg1 = args[1];
@@ -101,6 +108,32 @@ public class CommandPrimeBank extends CommandBase {
                     String name = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length)).trim();
                     PrimeBankState.get().setCompanyName(companyId, name);
                     sender.sendMessage(new TextComponentTranslation("primebank.company.name.set", name));
+                }
+                com.primebank.persistence.BankPersistence.saveAllAsync();
+                break;
+            }
+            case "setcompanyticker": {
+                // English: Set or clear the short ticker for the player's default company.
+                // Español: Establecer o limpiar el ticker corto para la empresa por defecto del jugador.
+                String companyId = CompanyAccounts.ensureDefault(me);
+                if (args.length < 2) {
+                    String label = companyLabel(server, companyId);
+                    String currentTicker = PrimeBankState.get().getCompanyShortName(companyId);
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_current", label, currentTicker == null ? "" : currentTicker));
+                    break;
+                }
+                String arg1 = args[1];
+                if ("clear".equalsIgnoreCase(arg1)) {
+                    PrimeBankState.get().setCompanyShortName(companyId, null);
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_cleared"));
+                } else {
+                    String ticker = arg1.trim().toUpperCase();
+                    if (ticker.length() < 2 || ticker.length() > 8 || !ticker.matches("[A-Z0-9]+")) {
+                        sender.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_short"));
+                        break;
+                    }
+                    PrimeBankState.get().setCompanyShortName(companyId, ticker);
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_set", ticker));
                 }
                 com.primebank.persistence.BankPersistence.saveAllAsync();
                 break;
@@ -311,6 +344,13 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "setcompanyname": {
+                if (args.length == 2) {
+                    String[] opts = new String[] { "clear" };
+                    return CommandBase.getListOfStringsMatchingLastWord(args, opts);
+                }
+                break;
+            }
+            case "setcompanyticker": {
                 if (args.length == 2) {
                     String[] opts = new String[] { "clear" };
                     return CommandBase.getListOfStringsMatchingLastWord(args, opts);

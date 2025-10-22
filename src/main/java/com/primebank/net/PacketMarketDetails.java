@@ -14,6 +14,7 @@ import net.minecraft.util.IThreadListener;
 public class PacketMarketDetails implements IMessage {
     public String companyId;
     public String displayName;
+    public String shortName;
     public long valuationCurrentCents;
     public long[] valuationHistoryCents;
     public long pricePerShareCents;
@@ -23,9 +24,10 @@ public class PacketMarketDetails implements IMessage {
     public boolean youAreOwner;
 
     public PacketMarketDetails() {}
-    public PacketMarketDetails(String companyId, String displayName, long valuationCurrentCents, long[] valuationHistoryCents, long pricePerShareCents, int listedShares, int yourHoldings, boolean tradingBlocked, boolean youAreOwner) {
+    public PacketMarketDetails(String companyId, String displayName, String shortName, long valuationCurrentCents, long[] valuationHistoryCents, long pricePerShareCents, int listedShares, int yourHoldings, boolean tradingBlocked, boolean youAreOwner) {
         this.companyId = companyId;
         this.displayName = displayName;
+        this.shortName = shortName;
         this.valuationCurrentCents = valuationCurrentCents;
         this.valuationHistoryCents = valuationHistoryCents;
         this.pricePerShareCents = pricePerShareCents;
@@ -39,6 +41,7 @@ public class PacketMarketDetails implements IMessage {
     public void fromBytes(ByteBuf buf) {
         this.companyId = ByteBufUtils.readUTF8String(buf);
         this.displayName = ByteBufUtils.readUTF8String(buf);
+        this.shortName = ByteBufUtils.readUTF8String(buf);
         this.valuationCurrentCents = buf.readLong();
         int historySize = buf.readInt();
         if (historySize < 0) historySize = 0;
@@ -57,6 +60,7 @@ public class PacketMarketDetails implements IMessage {
     public void toBytes(ByteBuf buf) {
         ByteBufUtils.writeUTF8String(buf, this.companyId == null ? "" : this.companyId);
         ByteBufUtils.writeUTF8String(buf, this.displayName == null ? "" : this.displayName);
+        ByteBufUtils.writeUTF8String(buf, this.shortName == null ? "" : this.shortName);
         buf.writeLong(this.valuationCurrentCents);
         long[] history = this.valuationHistoryCents == null ? new long[0] : this.valuationHistoryCents;
         buf.writeInt(history.length);
@@ -81,7 +85,7 @@ public class PacketMarketDetails implements IMessage {
                     // English: Update the GUI with latest details.
                     // Español: Actualizar la GUI con los últimos detalles.
                     long[] historyCopy = message.valuationHistoryCents == null ? new long[0] : java.util.Arrays.copyOf(message.valuationHistoryCents, message.valuationHistoryCents.length);
-                    gui.onDetails(message.displayName, message.valuationCurrentCents, historyCopy, message.pricePerShareCents, message.listedShares, message.yourHoldings, message.tradingBlocked, message.youAreOwner);
+                    gui.onDetails(message.displayName, message.shortName, message.valuationCurrentCents, historyCopy, message.pricePerShareCents, message.listedShares, message.yourHoldings, message.tradingBlocked, message.youAreOwner);
                 }
             });
             return null;

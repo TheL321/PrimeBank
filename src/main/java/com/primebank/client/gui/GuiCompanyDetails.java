@@ -24,6 +24,7 @@ public class GuiCompanyDetails extends GuiScreen {
 
     // Data populated by S2C packet
     private String displayName = null;
+    private String shortName = null;
     private long valuationCurrentCents = 0L;
     private long[] valuationHistory = new long[0];
     private long pricePerShareCents = 0L;
@@ -92,7 +93,11 @@ public class GuiCompanyDetails extends GuiScreen {
     }
 
     private String displayNameOrId() {
-        return (displayName != null && !displayName.isEmpty()) ? displayName : companyId;
+        String base = (displayName != null && !displayName.isEmpty()) ? displayName : companyId;
+        if (shortName != null && !shortName.isEmpty()) {
+            return String.format("%s (%s)", base, shortName);
+        }
+        return base;
     }
 
     @Override
@@ -212,8 +217,9 @@ public class GuiCompanyDetails extends GuiScreen {
      English: Called by the S2C packet handler to update this screen with latest details.
      Español: Llamado por el manejador S2C para actualizar esta pantalla con los últimos detalles.
     */
-    public void onDetails(String displayName, long valuationCurrentCents, long[] valuationHistory, long pricePerShareCents, int listedShares, int yourHoldings, boolean tradingBlocked, boolean youAreOwner) {
+    public void onDetails(String displayName, String shortName, long valuationCurrentCents, long[] valuationHistory, long pricePerShareCents, int listedShares, int yourHoldings, boolean tradingBlocked, boolean youAreOwner) {
         this.displayName = displayName;
+        this.shortName = shortName;
         this.valuationCurrentCents = valuationCurrentCents;
         this.valuationHistory = valuationHistory == null ? new long[0] : Arrays.copyOf(valuationHistory, valuationHistory.length);
         this.pricePerShareCents = pricePerShareCents;

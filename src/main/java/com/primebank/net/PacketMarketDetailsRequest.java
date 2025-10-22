@@ -37,7 +37,9 @@ public class PacketMarketDetailsRequest implements IMessage {
                 EntityPlayerMP p = ctx.getServerHandler().player;
                 String cid = message.companyId;
                 com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies().get(cid);
-                String displayName = com.primebank.core.state.PrimeBankState.get().getCompanyName(cid);
+                com.primebank.core.state.PrimeBankState state = com.primebank.core.state.PrimeBankState.get();
+                String displayName = state.getCompanyName(cid);
+                String shortName = state.getCompanyShortName(cid);
                 if (displayName == null || displayName.isEmpty()) displayName = cid;
                 long valuationCurrent = 0L;
                 long[] valuationHistory = new long[0];
@@ -64,7 +66,7 @@ public class PacketMarketDetailsRequest implements IMessage {
                     blocked = valuationCurrent <= 0;
                     owner = c.ownerUuid != null && c.ownerUuid.equals(p.getUniqueID());
                 }
-                PacketMarketDetails resp = new PacketMarketDetails(cid, displayName, valuationCurrent, valuationHistory, pps, listed, holdings, blocked, owner);
+                PacketMarketDetails resp = new PacketMarketDetails(cid, displayName, shortName, valuationCurrent, valuationHistory, pps, listed, holdings, blocked, owner);
                 com.primebank.PrimeBankMod.NETWORK.sendTo(resp, p);
             });
             return null;

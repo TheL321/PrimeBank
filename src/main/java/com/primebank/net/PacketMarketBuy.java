@@ -55,7 +55,9 @@ public class PacketMarketBuy implements IMessage {
                     p.sendMessage(new TextComponentTranslation("primebank.market.buy.ok", shares, cid, com.primebank.core.Money.formatUsd(pps), com.primebank.core.Money.formatUsd(gross)));
                     // English: Send updated details back to refresh the GUI.
                     // Español: Enviar detalles actualizados para refrescar la GUI.
-                    String displayName = com.primebank.core.state.PrimeBankState.get().getCompanyName(cid);
+                    com.primebank.core.state.PrimeBankState state = com.primebank.core.state.PrimeBankState.get();
+                    String displayName = state.getCompanyName(cid);
+                    String shortName = state.getCompanyShortName(cid);
                     if (displayName == null || displayName.isEmpty()) displayName = cid;
                     c = com.primebank.core.state.PrimeBankState.get().companies().get(cid);
                     long valuationCurrent = c == null ? 0L : c.valuationCurrentCents;
@@ -73,7 +75,7 @@ public class PacketMarketBuy implements IMessage {
                     int yourHoldings = (c == null || c.holdings == null) ? 0 : c.holdings.getOrDefault(buyer.toString(), 0);
                     boolean blocked = valuationCurrent <= 0;
                     boolean owner = c != null && c.ownerUuid != null && c.ownerUuid.equals(buyer);
-                    com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketMarketDetails(cid, displayName, valuationCurrent, valuationHistory, refreshedPps, listed, yourHoldings, blocked, owner), p);
+                    com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketMarketDetails(cid, displayName, shortName, valuationCurrent, valuationHistory, refreshedPps, listed, yourHoldings, blocked, owner), p);
                 } else {
                     p.sendMessage(new TextComponentTranslation("primebank.market.buy.error." + r.error));
                 }

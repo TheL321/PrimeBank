@@ -122,12 +122,19 @@ public class GuiMarketHome extends GuiScreen {
      Español: Refrescar entradas desde PrimeBankState para mostrar empresas aprobadas.
     */
     private void reloadEntries() {
-        Map<String, String> names = com.primebank.core.state.PrimeBankState.get().getAllCompanyNames();
+        com.primebank.core.state.PrimeBankState state = com.primebank.core.state.PrimeBankState.get();
+        Map<String, String> names = state.getAllCompanyNames();
+        Map<String, String> shortNames = state.getAllCompanyShortNames();
         List<CompanyEntry> listEntries = new ArrayList<>();
         for (com.primebank.core.company.Company company : com.primebank.core.state.PrimeBankState.get().companies().all()) {
             if (company == null || !company.approved) continue;
             String displayName = names.getOrDefault(company.id, company.id);
-            listEntries.add(new CompanyEntry(displayName, company));
+            String ticker = shortNames.getOrDefault(company.id, "");
+            if (ticker != null && !ticker.trim().isEmpty()) {
+                // English: Append ticker in parentheses for clarity. Español: Añadir el ticker entre paréntesis para mayor claridad.
+                displayName = String.format("%s (%s)", displayName, ticker.trim());
+            }
+            listEntries.add(new CompanyEntry(displayName, ticker, company));
         }
         listEntries.sort(Comparator.comparing(e -> e.displayName.toLowerCase()));
         this.entries = listEntries;
@@ -146,9 +153,11 @@ public class GuiMarketHome extends GuiScreen {
         final long pricePerShare;
         final int listedShares;
         final boolean blocked;
+        final String shortName;
 
-        CompanyEntry(String displayName, com.primebank.core.company.Company company) {
+        CompanyEntry(String displayName, String shortName, com.primebank.core.company.Company company) {
             this.displayName = displayName;
+            this.shortName = shortName == null ? "" : shortName;
             this.companyId = company.id;
             this.valuation = company.valuationCurrentCents;
             this.pricePerShare = company.valuationCurrentCents <= 0 ? 0 : (company.valuationCurrentCents / 101L);

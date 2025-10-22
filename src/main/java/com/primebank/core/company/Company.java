@@ -14,6 +14,9 @@ public class Company {
     public String id; // e.g., "c:<ownerUuid>"
     public UUID ownerUuid;
     public String name;
+    // English: Stock-style short name (ticker) displayed in UIs.
+    // Español: Nombre corto tipo ticker mostrado en las UIs.
+    public String shortName;
     public String description;
     public boolean approved;
     public long appliedAt;    // ms epoch when applied

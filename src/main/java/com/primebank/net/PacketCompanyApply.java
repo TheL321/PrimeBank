@@ -19,20 +19,27 @@ import com.primebank.persistence.CompanyPersistence;
 public class PacketCompanyApply implements IMessage {
     private String name;
     private String desc;
+    private String shortName;
 
     public PacketCompanyApply() {}
-    public PacketCompanyApply(String name, String desc) { this.name = name; this.desc = desc; }
+    public PacketCompanyApply(String name, String desc, String shortName) {
+        this.name = name;
+        this.desc = desc;
+        this.shortName = shortName;
+    }
 
     @Override
     public void fromBytes(ByteBuf buf) {
         this.name = ByteBufUtils.readUTF8String(buf);
         this.desc = ByteBufUtils.readUTF8String(buf);
+        this.shortName = ByteBufUtils.readUTF8String(buf);
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
         ByteBufUtils.writeUTF8String(buf, this.name == null ? "" : this.name);
         ByteBufUtils.writeUTF8String(buf, this.desc == null ? "" : this.desc);
+        ByteBufUtils.writeUTF8String(buf, this.shortName == null ? "" : this.shortName);
     }
 
     public static class Handler implements IMessageHandler<PacketCompanyApply, IMessage> {
@@ -46,12 +53,18 @@ public class PacketCompanyApply implements IMessage {
                 Company c = reg.ensureDefault(owner);
                 c.name = message.name == null ? null : message.name.trim();
                 c.description = message.desc == null ? null : message.desc.trim();
+                c.shortName = message.shortName == null ? null : message.shortName.trim();
                 c.appliedAt = System.currentTimeMillis();
                 c.approved = false;
                 // English: Update display name mapping so POS and UIs show it immediately.
                 // Español: Actualizar el mapeo de nombre visible para que POS y UIs lo muestren de inmediato.
                 if (c.name != null && !c.name.isEmpty()) {
                     PrimeBankState.get().setCompanyName(c.id, c.name);
+                }
+                if (c.shortName != null && !c.shortName.isEmpty()) {
+                    // English: Also set the ticker-style short name.
+                    // Español: También establecer el nombre corto tipo ticker.
+                    PrimeBankState.get().setCompanyShortName(c.id, c.shortName);
                 }
                 CompanyPersistence.saveCompany(c);
                 // English: Persist snapshot including company display names.

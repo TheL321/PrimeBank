@@ -1,5 +1,6 @@
 package com.primebank.core.state;
 
+import java.util.Locale;
 import java.util.UUID;
 
 import com.primebank.PrimeBankMod;
@@ -19,6 +20,7 @@ public final class PrimeBankState {
     private final AccountRegistry accounts = new AccountRegistry();
     private final java.util.concurrent.ConcurrentHashMap<String, Long> posPending = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<String, String> companyNames = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<String, String> companyShortNames = new java.util.concurrent.ConcurrentHashMap<>();
     private final com.primebank.core.company.CompanyRegistry companies = new com.primebank.core.company.CompanyRegistry();
     private volatile int globalCashbackBps = 0;
 
@@ -101,6 +103,39 @@ public final class PrimeBankState {
     }
 
     /*
+     English: Set/get company short tickers, and snapshot/loader counterparts.
+     Español: Establecer/obtener tickers cortos de empresa y sus contrapartes para snapshots.
+    */
+    public void setCompanyShortName(String companyId, String shortName) {
+        if (companyId == null) return;
+        if (shortName == null) {
+            companyShortNames.remove(companyId);
+            return;
+        }
+        String sanitized = shortName.trim();
+        if (sanitized.isEmpty()) {
+            companyShortNames.remove(companyId);
+            return;
+        }
+        sanitized = sanitized.toUpperCase(Locale.ROOT);
+        companyShortNames.put(companyId, sanitized);
+    }
+    public String getCompanyShortName(String companyId) {
+        return companyId == null ? null : companyShortNames.get(companyId);
+    }
+    public java.util.Map<String, String> getAllCompanyShortNames() {
+        return java.util.Collections.unmodifiableMap(new java.util.HashMap<>(companyShortNames));
+    }
+    public void loadCompanyShortNames(java.util.Map<String, String> names) {
+        companyShortNames.clear();
+        if (names != null) {
+            for (java.util.Map.Entry<String, String> entry : names.entrySet()) {
+                setCompanyShortName(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    /*
      English: Reset all in-memory state when switching worlds to avoid cross-world leakage.
      Español: Reiniciar todo el estado en memoria al cambiar de mundo para evitar fugas entre mundos.
     */
@@ -109,6 +144,7 @@ public final class PrimeBankState {
         accounts.clear();
         posPending.clear();
         companyNames.clear();
+        companyShortNames.clear();
         companies.clear();
         globalCashbackBps = 0;
     }
