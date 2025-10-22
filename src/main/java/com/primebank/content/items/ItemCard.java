@@ -98,11 +98,37 @@ public class ItemCard extends Item {
         if (owner == null) {
             tooltip.add(I18n.format("primebank.card.tooltip.unlinked"));
         } else {
-            tooltip.add(I18n.format("primebank.card.tooltip.owner", owner.toString()));
+            // English: Prefer showing the owner's username when it's available on the client.
+            // Español: Preferir mostrar el nombre de usuario del dueño cuando esté disponible en el cliente.
+            tooltip.add(I18n.format("primebank.card.tooltip.owner", resolveOwnerName(owner)));
         }
         String id = getCardId(stack);
         if (id != null && !id.isEmpty()) {
             tooltip.add(I18n.format("primebank.card.tooltip.id", id));
         }
+    }
+
+    /*
+     English: Try to resolve the owner's UUID to a username using the client connection/tab list; fallback to UUID string.
+     Español: Intentar resolver el UUID del dueño a un nombre de usuario usando la conexión del cliente/lista de jugadores; fallback al UUID.
+    */
+    @SideOnly(Side.CLIENT)
+    private static String resolveOwnerName(UUID owner) {
+        try {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+            if (mc != null) {
+                net.minecraft.client.network.NetHandlerPlayClient conn = mc.getConnection();
+                if (conn != null) {
+                    net.minecraft.client.network.NetworkPlayerInfo info = conn.getPlayerInfo(owner);
+                    if (info != null && info.getGameProfile() != null && info.getGameProfile().getName() != null) {
+                        return info.getGameProfile().getName();
+                    }
+                }
+                if (mc.player != null && owner.equals(mc.player.getUniqueID())) {
+                    return mc.player.getName();
+                }
+            }
+        } catch (Throwable ignored) {}
+        return owner.toString();
     }
 }

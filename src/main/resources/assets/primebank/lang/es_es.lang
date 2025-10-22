@@ -57,6 +57,7 @@ primebank.pos.prompt.amount=Monto: %s
 primebank.pos.result.accepted=Cobro POS aceptado
 primebank.pos.result.cancelled=Cobro POS cancelado
 primebank.pos.prompt.merchant=Comerciante: %s
+primebank.pos.result.accepted.details=Pago completado. Al comerciante: %s, Comisión al Central: %s
 primebank.pos.pending.set=Cobro pendiente establecido: %s
 primebank.pos.pending.cleared=Cobro pendiente limpiado
 primebank.pos.pending.bad_amount=Monto inválido
@@ -90,3 +91,8 @@ primebank.company.name.cleared=Nombre visible de la empresa limpiado
 primebank.card.required=Debes sostener una Tarjeta PrimeBank para pagar
 primebank.card.owner.set=Esta tarjeta ahora está vinculada a %s
 primebank.card.owner.mismatch=Esta tarjeta pertenece a otro jugador
+
+# Tooltips de tarjeta
+primebank.card.tooltip.unlinked=Sin vincular
+primebank.card.tooltip.owner=Dueño: %s
+primebank.card.tooltip.id=ID de Tarjeta: %s

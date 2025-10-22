@@ -36,6 +36,26 @@ public class CommandPrimeBank extends CommandBase {
         return "primebank";
     }
 
+    /*
+     English: Friendly company label for chat: display name if set; otherwise owner's username (if resolvable); otherwise raw id.
+     Español: Etiqueta amigable de empresa para chat: nombre visible si existe; de lo contrario, nombre del dueño (si se puede resolver); en su defecto id crudo.
+    */
+    private String companyLabel(MinecraftServer server, String companyId) {
+        String disp = PrimeBankState.get().getCompanyName(companyId);
+        if (disp != null && !disp.isEmpty()) return disp;
+        if (companyId != null && companyId.startsWith("c:")) {
+            try {
+                String raw = companyId.substring(2);
+                java.util.UUID owner = java.util.UUID.fromString(raw);
+                net.minecraft.entity.player.EntityPlayerMP online = server.getPlayerList().getPlayerByUUID(owner);
+                if (online != null) return online.getName();
+                com.mojang.authlib.GameProfile gp = server.getPlayerProfileCache().getProfileByUUID(owner);
+                if (gp != null && gp.getName() != null) return gp.getName();
+            } catch (Exception ignored) {}
+        }
+        return companyId;
+    }
+
     @Override
     public String getUsage(ICommandSender sender) {
         return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|reload>";
@@ -69,7 +89,8 @@ public class CommandPrimeBank extends CommandBase {
                 String companyId = CompanyAccounts.ensureDefault(me);
                 if (args.length < 2) {
                     String current = PrimeBankState.get().getCompanyName(companyId);
-                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.current", companyId, current == null ? "" : current));
+                    String label = companyLabel(server, companyId);
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.current", label, current == null ? "" : current));
                     break;
                 }
                 String arg1 = args[1];
@@ -89,7 +110,8 @@ public class CommandPrimeBank extends CommandBase {
                 // Español: Mostrar el saldo de la cuenta de empresa por defecto del jugador (ingresos del vendedor).
                 String companyId = CompanyAccounts.ensureDefault(me);
                 long bal = PrimeBankState.get().accounts().get(companyId).getBalanceCents();
-                sender.sendMessage(new TextComponentTranslation("primebank.company.balance", companyId, Money.formatUsd(bal)));
+                String label = companyLabel(server, companyId);
+                sender.sendMessage(new TextComponentTranslation("primebank.company.balance", label, Money.formatUsd(bal)));
                 break;
             }
             case "depositcents": {

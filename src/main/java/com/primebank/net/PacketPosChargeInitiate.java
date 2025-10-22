@@ -66,10 +66,25 @@ public class PacketPosChargeInitiate implements IMessage {
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.card.owner.mismatch"));
                     return;
                 }
-                // English: Send S2C prompt with amount and company id.
-                // Español: Enviar aviso S2C con monto e id de empresa.
+                // English: Send S2C prompt with amount and a friendly merchant label (display name > owner username > raw id).
+                // Español: Enviar aviso S2C con monto y una etiqueta amigable del comerciante (nombre visible > usuario dueño > id crudo).
                 String disp = com.primebank.core.state.PrimeBankState.get().getCompanyName(companyId);
-                if (disp == null || disp.isEmpty()) disp = companyId;
+                if (disp == null || disp.isEmpty()) {
+                    if (companyId.startsWith("c:")) {
+                        try {
+                            String raw = companyId.substring(2);
+                            java.util.UUID companyOwner = java.util.UUID.fromString(raw);
+                            net.minecraft.entity.player.EntityPlayerMP merchant = p.getServerWorld().getMinecraftServer().getPlayerList().getPlayerByUUID(companyOwner);
+                            if (merchant != null) {
+                                disp = merchant.getName();
+                            } else {
+                                com.mojang.authlib.GameProfile gp = p.getServerWorld().getMinecraftServer().getPlayerProfileCache().getProfileByUUID(companyOwner);
+                                if (gp != null && gp.getName() != null) disp = gp.getName();
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    if (disp == null || disp.isEmpty()) disp = companyId;
+                }
                 com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketPosPrompt(cents, companyId, disp), p);
             });
             return null;
