@@ -100,6 +100,19 @@ public final class PrimeBankState {
         if (names != null) companyNames.putAll(names);
     }
 
+    /*
+     English: Reset all in-memory state when switching worlds to avoid cross-world leakage.
+     Español: Reiniciar todo el estado en memoria al cambiar de mundo para evitar fugas entre mundos.
+    */
+    public void resetForNewWorld() {
+        // Clear registries/maps
+        accounts.clear();
+        posPending.clear();
+        companyNames.clear();
+        companies.clear();
+        globalCashbackBps = 0;
+    }
+
     public Account ensureCentralAccount() {
         if (!accounts.exists(CENTRAL_ACCOUNT_ID)) {
             PrimeBankMod.LOGGER.info("[PrimeBank] Creating central bank account / Creando cuenta del banco central");

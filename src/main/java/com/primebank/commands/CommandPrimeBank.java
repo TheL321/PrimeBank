@@ -172,9 +172,14 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "reload": {
-                File worldDir = new File(server.getDataDirectory(), server.getFolderName());
+                // English: Reset and reload per-world data (accounts, companies) to avoid cross-world leakage.
+                // Español: Reiniciar y recargar datos por mundo (cuentas, empresas) para evitar fugas entre mundos.
+                File worldDir = server.getEntityWorld().getSaveHandler().getWorldDirectory();
                 PersistencePaths.setWorldDir(worldDir);
+                com.primebank.core.state.PrimeBankState.get().resetForNewWorld();
                 BankPersistence.loadAll();
+                com.primebank.persistence.CompanyPersistence.loadAll();
+                com.primebank.core.state.PrimeBankState.get().ensureCentralAccount();
                 sender.sendMessage(new TextComponentTranslation("primebank.reload.ok"));
                 break;
             }

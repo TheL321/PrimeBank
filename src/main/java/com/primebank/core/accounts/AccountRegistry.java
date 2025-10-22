@@ -31,4 +31,12 @@ public class AccountRegistry {
     public Collection<Account> all() {
         return Collections.unmodifiableCollection(accounts.values());
     }
+
+    /*
+     English: Clear all accounts from memory (used when changing worlds to avoid cross-world leakage).
+     Español: Limpiar todas las cuentas de memoria (usado al cambiar de mundo para evitar fugas entre mundos).
+    */
+    public void clear() {
+        accounts.clear();
+    }
 }

@@ -46,4 +46,13 @@ public final class CompanyRegistry {
             c.salesWeekCents = Math.addExact(c.salesWeekCents, cents);
         }
     }
+
+    /*
+     English: Clear all companies from memory (used when changing worlds to avoid cross-world leakage).
+     Español: Limpiar todas las empresas de memoria (usado al cambiar de mundo para evitar fugas entre mundos).
+    */
+    public void clear() {
+        companies.clear();
+    }
 }
+

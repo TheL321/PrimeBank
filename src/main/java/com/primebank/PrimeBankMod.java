@@ -73,9 +73,15 @@ public class PrimeBankMod {
         */
         File worldDir = event.getServer().getEntityWorld().getSaveHandler().getWorldDirectory();
         PersistencePaths.setWorldDir(worldDir);
+        // English: Reset in-memory state to avoid cross-world leakage before loading this world's data.
+        // Español: Reiniciar el estado en memoria para evitar fugas entre mundos antes de cargar los datos de este mundo.
+        com.primebank.core.state.PrimeBankState.get().resetForNewWorld();
         BankPersistence.loadAll();
         com.primebank.core.admin.AdminService.reload(event.getServer().getDataDirectory());
         com.primebank.persistence.CompanyPersistence.loadAll();
+        // English: Ensure central account exists after load.
+        // Español: Asegurar que la cuenta central exista después de cargar.
+        com.primebank.core.state.PrimeBankState.get().ensureCentralAccount();
         com.primebank.market.ValuationService.get().start();
         event.registerServerCommand(new CommandPrimeBank());
     }
