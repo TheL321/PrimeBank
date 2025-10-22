@@ -1,11 +1,13 @@
 package com.primebank.client.gui;
 
 import java.util.Arrays;
+import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.renderer.GlStateManager;
 
 import com.primebank.PrimeBankMod;
 import com.primebank.net.PacketMarketDetailsRequest;
@@ -81,28 +83,31 @@ public class GuiCompanyDetails extends GuiScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();
         String title = I18n.format("primebank.market.details.title", displayNameOrId());
-        drawCenteredString(this.fontRenderer, title, this.width / 2, this.height / 2 - 60, 0xFFFFFF);
+        int centerX = this.width / 2;
+        int y = this.height / 2 - 60;
+        int maxWidth = Math.max(160, this.width - 80);
+        drawCenteredScaledString(title, centerX, y, 0xFFFFFF, maxWidth);
 
-        int y = this.height / 2 - 30;
+        y = this.height / 2 - 30;
         String valuationLine = I18n.format("primebank.market.details.valuation", com.primebank.core.Money.formatUsd(valuationCurrentCents));
-        this.drawCenteredString(this.fontRenderer, valuationLine, this.width / 2, y, 0xDDDDDD); y += 12;
+        drawCenteredScaledString(valuationLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
         if (valuationHistory.length > 0) {
             String historyLine = I18n.format("primebank.market.details.valuation_history", valuationHistory.length, formatValuationHistory());
-            this.drawCenteredString(this.fontRenderer, historyLine, this.width / 2, y, 0xBBBBBB); y += 12;
+            y = drawWrappedCentered(historyLine, centerX, y, 0xBBBBBB, maxWidth);
         }
         String priceLine = I18n.format("primebank.market.details.price", com.primebank.core.Money.formatUsd(pricePerShareCents));
-        this.drawCenteredString(this.fontRenderer, priceLine, this.width / 2, y, 0xDDDDDD); y += 12;
+        drawCenteredScaledString(priceLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
         String listedLine = I18n.format("primebank.market.details.listed", listedShares);
-        this.drawCenteredString(this.fontRenderer, listedLine, this.width / 2, y, 0xDDDDDD); y += 12;
+        drawCenteredScaledString(listedLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
         String yourLine = I18n.format("primebank.market.details.your_holdings", yourHoldings);
-        this.drawCenteredString(this.fontRenderer, yourLine, this.width / 2, y, 0xDDDDDD); y += 12;
+        drawCenteredScaledString(yourLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
         if (youAreOwner) {
             String ownerLine = I18n.format("primebank.market.details.you_are_owner");
-            this.drawCenteredString(this.fontRenderer, ownerLine, this.width / 2, y, 0x99FF99); y += 12;
+            drawCenteredScaledString(ownerLine, centerX, y, 0x99FF99, maxWidth); y += 12;
         }
         if (tradingBlocked) {
             String blocked = I18n.format("primebank.market.details.blocked");
-            this.drawCenteredString(this.fontRenderer, blocked, this.width / 2, y, 0xFF6666); y += 12;
+            drawCenteredScaledString(blocked, centerX, y, 0xFF6666, maxWidth); y += 12;
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
@@ -140,5 +145,39 @@ public class GuiCompanyDetails extends GuiScreen {
             sb.append(com.primebank.core.Money.formatUsd(val));
         }
         return sb.toString();
+    }
+
+    /*
+     English: Draw centered text with optional scaling to fit within maxWidth.
+     Español: Dibujar texto centrado con escala opcional para ajustarse a maxWidth.
+    */
+    private void drawCenteredScaledString(String text, int centerX, int y, int color, int maxWidth) {
+        if (text == null) return;
+        int width = this.fontRenderer.getStringWidth(text);
+        if (width <= 0) return;
+        float scale = 1.0F;
+        if (width > maxWidth) {
+            scale = (float) maxWidth / (float) width;
+        }
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(centerX, y, 0.0F);
+        GlStateManager.scale(scale, scale, 1.0F);
+        this.fontRenderer.drawString(text, -this.fontRenderer.getStringWidth(text) / 2, 0, color, false);
+        GlStateManager.popMatrix();
+    }
+
+    /*
+     English: Wrap long text into multiple centered lines and return updated Y position.
+     Español: Dividir texto largo en varias líneas centradas y devolver la posición Y actualizada.
+    */
+    private int drawWrappedCentered(String text, int centerX, int startY, int color, int maxWidth) {
+        if (text == null || text.isEmpty()) return startY;
+        int y = startY;
+        List<String> lines = this.fontRenderer.listFormattedStringToWidth(text, Math.max(1, maxWidth));
+        for (String line : lines) {
+            drawCenteredScaledString(line, centerX, y, color, maxWidth);
+            y += 12;
+        }
+        return y;
     }
 }
