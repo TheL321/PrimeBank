@@ -86,16 +86,16 @@ public class GuiCompanyDetails extends GuiScreen {
         this.drawDefaultBackground();
         String title = I18n.format("primebank.market.details.title", displayNameOrId());
         int centerX = this.width / 2;
-        int y = this.height / 2 - 60;
+        int y = 40;
         int maxWidth = Math.max(160, this.width - 80);
         drawCenteredScaledString(title, centerX, y, 0xFFFFFF, maxWidth);
 
-        y = this.height / 2 - 30;
+        y = 64;
         String valuationLine = I18n.format("primebank.market.details.valuation", com.primebank.core.Money.formatUsd(valuationCurrentCents));
         drawCenteredScaledString(valuationLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
         if (valuationHistory.length > 0) {
             drawGraph(centerX, y);
-            y += 120;
+            y += 110;
             String historyLine = I18n.format("primebank.market.details.valuation_history", valuationHistory.length, formatValuationHistory());
             y = drawWrappedCentered(historyLine, centerX, y, 0xBBBBBB, maxWidth);
             y += 4;
@@ -145,8 +145,8 @@ public class GuiCompanyDetails extends GuiScreen {
      Español: Dibujar el historial de valoración como un gráfico relleno para las últimas 26 semanas.
     */
     private void drawGraph(int centerX, int topY) {
-        int width = Math.min(this.width - 60, 260);
-        int height = 110;
+        int width = Math.min(this.width - 80, 240);
+        int height = 88;
         int left = centerX - width / 2;
         int bottom = topY + height;
         Gui.drawRect(left, topY, left + width, bottom, 0x44000000);
