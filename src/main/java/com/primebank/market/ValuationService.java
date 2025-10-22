@@ -80,29 +80,44 @@ public final class ValuationService {
         for (Company c : reg.all()) {
             if (c == null || !c.approved) continue;
             if (c.approvedAt <= 0) continue;
-            boolean firstDone = c.lastValuationAt > 0;
-            long dueAt = firstDone ? c.lastValuationAt + 7 * DAY_MS : c.approvedAt + 8 * DAY_MS;
+            long lastValuation = c.lastValuationAt;
+            long dueAt = (lastValuation > 0) ? lastValuation + 7 * DAY_MS : c.approvedAt + 8 * DAY_MS;
             if (now < dueAt) continue;
+
+            long previousValuation = c.valuationCurrentCents;
             long sales = c.salesWeekCents;
-            long prev = c.valuationCurrentCents;
-            long v;
-            if (!firstDone) {
-                v = Math.max(0L, Math.multiplyExact(sales, 6L));
-            } else {
-                long term = Math.addExact(Math.multiplyExact(sales, 6L), Math.multiplyExact(prev, 2L));
-                v = term / 3L; // integer floor implicitly
+            boolean changed = false;
+
+            while (now >= dueAt) {
+                long valuation;
+                if (lastValuation <= 0) {
+                    valuation = Math.max(0L, Math.multiplyExact(sales, 6L));
+                } else {
+                    long term = Math.addExact(Math.multiplyExact(sales, 6L), Math.multiplyExact(previousValuation, 2L));
+                    long computed = term / 3L;
+                    valuation = Math.max(0L, computed);
+                }
+
+                if (c.valuationHistoryCents == null) c.valuationHistoryCents = new java.util.ArrayList<>();
+                c.valuationHistoryCents.add(valuation);
+                if (c.valuationHistoryCents.size() > 26) {
+                    int excess = c.valuationHistoryCents.size() - 26;
+                    for (int i = 0; i < excess; i++) c.valuationHistoryCents.remove(0);
+                }
+
+                previousValuation = valuation;
+                lastValuation = dueAt;
+                dueAt = lastValuation + 7 * DAY_MS;
+                sales = 0L; // English: After first catch-up, remaining weeks assume no recorded sales. Español: Tras el primer catch-up, se asume cero ventas en semanas restantes.
+                changed = true;
             }
-            c.valuationCurrentCents = v;
-            c.lastValuationAt = now;
-            if (c.valuationHistoryCents == null) c.valuationHistoryCents = new java.util.ArrayList<>();
-            c.valuationHistoryCents.add(v);
-            if (c.valuationHistoryCents.size() > 26) {
-                // Trim oldest
-                int excess = c.valuationHistoryCents.size() - 26;
-                for (int i = 0; i < excess; i++) c.valuationHistoryCents.remove(0);
+
+            if (changed) {
+                c.valuationCurrentCents = previousValuation;
+                c.lastValuationAt = lastValuation;
+                c.salesWeekCents = sales;
+                updated.add(c);
             }
-            c.salesWeekCents = 0L; // reset accumulator
-            updated.add(c);
         }
         for (Company c : updated) {
             CompanyPersistence.saveCompany(c);
