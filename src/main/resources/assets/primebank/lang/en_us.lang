@@ -113,6 +113,9 @@ primebank.company.name.cleared=Company display name cleared
 
 # Market (primary)
 primebank.market.home.title=Market (Primary)
+primebank.market.home.my_company=My Company Details
+primebank.market.home.open_id=Open by ID
+primebank.market.home.company_id_hint=Enter company ID like c:<uuid>
 primebank.market.list.ok=Listed %s shares for %s
 primebank.market.list.error.bad_args=Invalid arguments
 primebank.market.list.error.company_not_found=Company not found
@@ -129,6 +132,19 @@ primebank.market.buy.error.insufficient=Insufficient funds
 primebank.market.buy.error.ledger_error=Payment failed
 primebank.market.buy.error.company_no_owner=Company has no owner set
 primebank.market.buy.error.majority_violation=Operation would violate majority rule
+
+# Market details & buy dialog
+primebank.market.details.title=Company Details: %s
+primebank.market.details.price=Price per share: %s
+primebank.market.details.listed=Listed shares: %s
+primebank.market.details.your_holdings=Your holdings: %s
+primebank.market.details.blocked=Trading is blocked until first valuation
+primebank.market.details.buy=Buy Shares
+primebank.market.buydialog.title=Buy shares in %s
+primebank.market.buydialog.price_each=Price each: %s
+primebank.market.buydialog.listed_available=Listed available: %s
+primebank.market.buydialog.enter_shares=Enter shares to buy
+primebank.market.buydialog.buy=Buy
 
 # Card owner enforcement
 primebank.card.required=You must hold a PrimeBank Card to pay

@@ -29,5 +29,11 @@ public final class Net {
         // English: Company application packet (C2S).
         // Español: Paquete de solicitud de empresa (C2S).
         PrimeBankMod.NETWORK.registerMessage(PacketCompanyApply.Handler.class, PacketCompanyApply.class, ID++, Side.SERVER);
+        // English: Market details request (C2S) and response (S2C); market buy (C2S).
+        // Español: Solicitud de detalles de mercado (C2S) y respuesta (S2C); compra en mercado (C2S).
+        PrimeBankMod.NETWORK.registerMessage(PacketMarketDetailsRequest.Handler.class, PacketMarketDetailsRequest.class, ID++, Side.SERVER);
+        PrimeBankMod.NETWORK.registerMessage(PacketMarketDetails.Handler.class, PacketMarketDetails.class, ID++, Side.CLIENT);
+        PrimeBankMod.NETWORK.registerMessage(PacketMarketBuy.Handler.class, PacketMarketBuy.class, ID++, Side.SERVER);
     }
 }
+
