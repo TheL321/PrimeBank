@@ -80,6 +80,14 @@ Commands / Comandos:
   English: Reloads configuration/state as supported by the server.
   Español: Recarga configuración/estado según lo soportado por el servidor.
 
+- /primebank mycompanybalance
+  English: Shows your default company account balance (seller proceeds from POS).
+  Español: Muestra el saldo de tu cuenta de empresa por defecto (ingresos del vendedor del POS).
+
+- /primebank setcompanyname <name|clear>
+  English: Sets a display name for your default company (used in POS prompts). Use "clear" to remove it.
+  Español: Establece un nombre visible para tu empresa por defecto (usado en avisos del POS). Usa "clear" para quitarlo.
+
 Notes / Notas:
 - English: All amounts are integers in cents to avoid float rounding.
   Español: Todos los montos son enteros en centavos para evitar redondeos de flotantes.

@@ -42,6 +42,11 @@ public final class BankPersistence {
         if (snap.posPending != null) {
             PrimeBankState.get().loadPendingCharges(snap.posPending);
         }
+        // English: Load company display names if present.
+        // Español: Cargar nombres visibles de empresas si existen.
+        if (snap.companyNames != null) {
+            PrimeBankState.get().loadCompanyNames(snap.companyNames);
+        }
     }
 
     /*
@@ -77,6 +82,9 @@ public final class BankPersistence {
         // English: Include a copy of pending POS charges to persist across restarts.
         // Español: Incluir una copia de los cargos POS pendientes para persistir entre reinicios.
         snap.posPending = new java.util.HashMap<>(PrimeBankState.get().getAllPendingCharges());
+        // English: Include company display names.
+        // Español: Incluir nombres visibles de empresas.
+        snap.companyNames = new java.util.HashMap<>(PrimeBankState.get().getAllCompanyNames());
         JsonUtil.write(file, snap);
         PrimeBankMod.LOGGER.info("[PrimeBank] Snapshot saved: {} accounts / cuentas", snap.accounts.size());
     }
@@ -90,6 +98,8 @@ public final class BankPersistence {
         public List<AccountRecord> accounts;
         @SerializedName("posPending")
         public java.util.Map<String, Long> posPending;
+        @SerializedName("companyNames")
+        public java.util.Map<String, String> companyNames;
     }
 
     public static class AccountRecord {

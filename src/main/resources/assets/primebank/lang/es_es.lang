@@ -79,3 +79,14 @@ primebank.terminal.balance=Terminal PrimeBank — Saldo: %s
 primebank.terminal.prompt_deposit=Agáchate para depositar todo el efectivo
 primebank.terminal.no_cash=Sin efectivo para depositar
 primebank.terminal.deposit_added=Depositado %s — Saldo: %s
+
+# Empresa
+primebank.company.balance=Empresa %s — Saldo: %s
+primebank.company.name.current=Empresa %s — Nombre actual: %s
+primebank.company.name.set=Nombre de la empresa establecido a: %s
+primebank.company.name.cleared=Nombre visible de la empresa limpiado
+
+# Verificación de dueño de tarjeta
+primebank.card.required=Debes sostener una Tarjeta PrimeBank para pagar
+primebank.card.owner.set=Esta tarjeta ahora está vinculada a %s
+primebank.card.owner.mismatch=Esta tarjeta pertenece a otro jugador

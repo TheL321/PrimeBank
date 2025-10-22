@@ -15,15 +15,16 @@ import net.minecraft.client.Minecraft;
 public class PacketPosPrompt implements IMessage {
     public long cents;
     public String companyId;
+    public String companyDisplay;
 
     public PacketPosPrompt() {}
-    public PacketPosPrompt(long cents, String companyId) { this.cents = cents; this.companyId = companyId; }
+    public PacketPosPrompt(long cents, String companyId, String companyDisplay) { this.cents = cents; this.companyId = companyId; this.companyDisplay = companyDisplay; }
 
     @Override
-    public void fromBytes(ByteBuf buf) { this.cents = buf.readLong(); this.companyId = ByteBufUtils.readUTF8String(buf); }
+    public void fromBytes(ByteBuf buf) { this.cents = buf.readLong(); this.companyId = ByteBufUtils.readUTF8String(buf); this.companyDisplay = ByteBufUtils.readUTF8String(buf); }
 
     @Override
-    public void toBytes(ByteBuf buf) { buf.writeLong(this.cents); ByteBufUtils.writeUTF8String(buf, this.companyId == null ? "" : this.companyId); }
+    public void toBytes(ByteBuf buf) { buf.writeLong(this.cents); ByteBufUtils.writeUTF8String(buf, this.companyId == null ? "" : this.companyId); ByteBufUtils.writeUTF8String(buf, this.companyDisplay == null ? "" : this.companyDisplay); }
 
     public static class Handler implements IMessageHandler<PacketPosPrompt, IMessage> {
         @Override
@@ -32,7 +33,7 @@ public class PacketPosPrompt implements IMessage {
                 // English: Open the GUI prompt on the client.
                 // Español: Abrir la GUI de confirmación en el cliente.
                 net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
-                mc.displayGuiScreen(new com.primebank.client.gui.GuiPosPrompt(message.cents, message.companyId));
+                mc.displayGuiScreen(new com.primebank.client.gui.GuiPosPrompt(message.cents, message.companyId, message.companyDisplay));
             });
             return null;
         }

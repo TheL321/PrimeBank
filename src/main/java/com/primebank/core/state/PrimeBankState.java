@@ -18,6 +18,7 @@ public final class PrimeBankState {
 
     private final AccountRegistry accounts = new AccountRegistry();
     private final java.util.concurrent.ConcurrentHashMap<String, Long> posPending = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<String, String> companyNames = new java.util.concurrent.ConcurrentHashMap<>();
 
     private PrimeBankState() {}
 
@@ -62,6 +63,26 @@ public final class PrimeBankState {
     public void loadPendingCharges(java.util.Map<String, Long> data) {
         posPending.clear();
         if (data != null) posPending.putAll(data);
+    }
+
+    /*
+     English: Set/get company display names, and snapshot/loader for persistence.
+     Español: Establecer/obtener nombres visibles de empresas, y snapshot/cargador para persistencia.
+    */
+    public void setCompanyName(String companyId, String name) {
+        if (companyId == null) return;
+        if (name == null || name.trim().isEmpty()) companyNames.remove(companyId);
+        else companyNames.put(companyId, name.trim());
+    }
+    public String getCompanyName(String companyId) {
+        return companyId == null ? null : companyNames.get(companyId);
+    }
+    public java.util.Map<String, String> getAllCompanyNames() {
+        return java.util.Collections.unmodifiableMap(new java.util.HashMap<>(companyNames));
+    }
+    public void loadCompanyNames(java.util.Map<String, String> names) {
+        companyNames.clear();
+        if (names != null) companyNames.putAll(names);
     }
 
     public Account ensureCentralAccount() {

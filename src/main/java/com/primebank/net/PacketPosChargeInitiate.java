@@ -47,9 +47,30 @@ public class PacketPosChargeInitiate implements IMessage {
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.no_pending"));
                     return;
                 }
+                // English: Enforce buyer holds a PrimeBank Card and is the owner. If owner is unset, set it to buyer.
+                // Español: Exigir que el comprador sostenga una Tarjeta PrimeBank y sea el dueño. Si no tiene dueño, asignarlo al comprador.
+                net.minecraft.item.ItemStack main = p.getHeldItemMainhand();
+                net.minecraft.item.ItemStack off = p.getHeldItemOffhand();
+                net.minecraft.item.ItemStack card = null;
+                if (main != null && main.getItem() instanceof com.primebank.content.items.ItemCard) card = main;
+                else if (off != null && off.getItem() instanceof com.primebank.content.items.ItemCard) card = off;
+                if (card == null) {
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.card.required"));
+                    return;
+                }
+                java.util.UUID owner = com.primebank.content.items.ItemCard.getOwnerUUID(card);
+                if (owner == null) {
+                    com.primebank.content.items.ItemCard.setOwnerUUID(card, p.getUniqueID());
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.card.owner.set", p.getName()));
+                } else if (!owner.equals(p.getUniqueID())) {
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.card.owner.mismatch"));
+                    return;
+                }
                 // English: Send S2C prompt with amount and company id.
                 // Español: Enviar aviso S2C con monto e id de empresa.
-                com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketPosPrompt(cents, companyId), p);
+                String disp = com.primebank.core.state.PrimeBankState.get().getCompanyName(companyId);
+                if (disp == null || disp.isEmpty()) disp = companyId;
+                com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketPosPrompt(cents, companyId, disp), p);
             });
             return null;
         }

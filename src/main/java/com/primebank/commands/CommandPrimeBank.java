@@ -38,7 +38,7 @@ public class CommandPrimeBank extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|reload>";
+        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|reload>";
     }
 
     @Override
@@ -61,6 +61,27 @@ public class CommandPrimeBank extends CommandBase {
             case "balance": {
                 long bal = PrimeBankState.get().accounts().get(myAcc).getBalanceCents();
                 sender.sendMessage(new TextComponentTranslation("primebank.balance", Money.formatUsd(bal)));
+                break;
+            }
+            case "setcompanyname": {
+                // English: Set or clear the display name for the player's default company.
+                // Español: Establecer o limpiar el nombre visible de la empresa por defecto del jugador.
+                String companyId = CompanyAccounts.ensureDefault(me);
+                if (args.length < 2) {
+                    String current = PrimeBankState.get().getCompanyName(companyId);
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.current", companyId, current == null ? "" : current));
+                    break;
+                }
+                String arg1 = args[1];
+                if ("clear".equalsIgnoreCase(arg1)) {
+                    PrimeBankState.get().setCompanyName(companyId, null);
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.cleared"));
+                } else {
+                    String name = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length)).trim();
+                    PrimeBankState.get().setCompanyName(companyId, name);
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.set", name));
+                }
+                com.primebank.persistence.BankPersistence.saveAllAsync();
                 break;
             }
             case "mycompanybalance": {
@@ -158,7 +179,7 @@ public class CommandPrimeBank extends CommandBase {
         // English: Suggest subcommands when typing the first argument.
         // Español: Sugerir subcomandos al escribir el primer argumento.
         if (args.length <= 1) {
-            String[] subs = new String[] { "balance", "depositcents", "withdrawcents", "transfercents", "mycompanybalance", "reload" };
+            String[] subs = new String[] { "balance", "depositcents", "withdrawcents", "transfercents", "mycompanybalance", "setcompanyname", "reload" };
             return CommandBase.getListOfStringsMatchingLastWord(args, subs);
         }
 
@@ -184,6 +205,13 @@ public class CommandPrimeBank extends CommandBase {
                     // Español: Sugerir montos comunes en centavos para depositar/retirar.
                     String[] cents = new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" };
                     return CommandBase.getListOfStringsMatchingLastWord(args, cents);
+                }
+                break;
+            }
+            case "setcompanyname": {
+                if (args.length == 2) {
+                    String[] opts = new String[] { "clear" };
+                    return CommandBase.getListOfStringsMatchingLastWord(args, opts);
                 }
                 break;
             }

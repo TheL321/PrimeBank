@@ -18,12 +18,14 @@ import com.primebank.net.PacketPosRespond;
 public class GuiPosPrompt extends GuiScreen {
     private final long cents;
     private final String companyId;
+    private final String companyDisplay;
     private GuiButton btnOk;
     private GuiButton btnCancel;
 
-    public GuiPosPrompt(long cents, String companyId) {
+    public GuiPosPrompt(long cents, String companyId, String companyDisplay) {
         this.cents = cents;
         this.companyId = companyId;
+        this.companyDisplay = companyDisplay;
     }
 
     @Override
@@ -42,7 +44,7 @@ public class GuiPosPrompt extends GuiScreen {
         this.drawDefaultBackground();
         String title = I18n.format("primebank.pos.prompt.title");
         String amount = I18n.format("primebank.pos.prompt.amount", Money.formatUsd(cents));
-        String merchant = I18n.format("primebank.pos.prompt.merchant", companyId == null ? "?" : companyId);
+        String merchant = I18n.format("primebank.pos.prompt.merchant", (companyDisplay != null && !companyDisplay.isEmpty()) ? companyDisplay : (companyId == null ? "?" : companyId));
         drawCenteredString(this.fontRenderer, title, this.width / 2, this.height / 2 - 30, 0xFFFFFF);
         drawCenteredString(this.fontRenderer, amount, this.width / 2, this.height / 2 - 15, 0xFFFFFF);
         drawCenteredString(this.fontRenderer, merchant, this.width / 2, this.height / 2 - 3, 0xAAAAAA);
