@@ -8,6 +8,11 @@ public final class PrimeBankConfig {
     public static final int MARKET_BUYER_FEE_BPS = 250;
     public static final int MARKET_SELLER_FEE_BPS = 500;
     public static final int POS_BANK_FEE_BPS = 500;
+    /*
+     English: If true, clear the company's pending POS amount after each successful sale.
+     Español: Si es verdadero, limpiar el monto POS pendiente de la empresa tras cada venta exitosa.
+    */
+    public static final boolean POS_AUTOCLEAR_PENDING_AFTER_SALE = false;
 
     public static final double LOANS_DEFAULT_APR = 0.12;
     public static final int LOANS_DOWNPAYMENT_DEFAULT_BPS = 2000;

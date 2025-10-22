@@ -81,6 +81,13 @@ public class PacketPosRespond implements IMessage {
                             }
                         }
                     } catch (Exception ignored) {}
+
+                    // English: Optionally clear the company's pending POS amount after a successful sale.
+                    // Español: Opcionalmente limpiar el monto POS pendiente de la empresa tras una venta exitosa.
+                    if (com.primebank.core.config.PrimeBankConfig.POS_AUTOCLEAR_PENDING_AFTER_SALE) {
+                        com.primebank.core.state.PrimeBankState.get().clearPendingCharge(message.companyId);
+                        com.primebank.persistence.BankPersistence.saveAllAsync();
+                    }
                 } else {
                     String key = "primebank.transfer.error." + res.code;
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation(key));

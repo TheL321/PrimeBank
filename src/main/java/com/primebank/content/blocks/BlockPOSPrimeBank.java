@@ -42,21 +42,26 @@ public class BlockPOSPrimeBank extends Block {
 
     @Override
     public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-        // English: Sneak to link POS to merchant's default company on server.
-        // Español: Agacharse para enlazar el POS a la empresa por defecto del comerciante en el servidor.
+        // English: Server-side: first right-click links POS to the player's default company if not holding a card (avoids buyers linking by accident).
+        // Español: Lado servidor: el primer clic derecho enlaza el POS a la empresa por defecto del jugador si no sostiene una tarjeta (evita que compradores la enlacen por accidente).
         if (!worldIn.isRemote) {
             TileEntity te = worldIn.getTileEntity(pos);
             if (!(te instanceof TilePosPrimeBank)) return true;
             TilePosPrimeBank t = (TilePosPrimeBank) te;
-            if (playerIn.isSneaking()) {
-                if (t.companyId == null) {
+            if (t.companyId == null) {
+                ItemStack heldSrv = playerIn.getHeldItem(hand);
+                boolean holdingCard = heldSrv != null && heldSrv.getItem() instanceof ItemCard;
+                if (!holdingCard) {
                     String companyId = CompanyAccounts.ensureDefault(playerIn.getUniqueID());
                     t.companyId = companyId;
                     t.markDirty();
                     playerIn.sendMessage(new TextComponentTranslation("primebank.pos.linked", companyId));
-                } else {
-                    playerIn.sendMessage(new TextComponentTranslation("primebank.pos.linked.already", t.companyId));
+                    return true;
                 }
+            } else if (playerIn.isSneaking()) {
+                // English: If already linked, inform the player.
+                // Español: Si ya está enlazado, informar al jugador.
+                playerIn.sendMessage(new TextComponentTranslation("primebank.pos.linked.already", t.companyId));
                 return true;
             }
         }

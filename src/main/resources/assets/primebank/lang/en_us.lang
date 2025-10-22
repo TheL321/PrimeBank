@@ -92,3 +92,8 @@ primebank.company.name.cleared=Company display name cleared
 primebank.card.required=You must hold a PrimeBank Card to pay
 primebank.card.owner.set=This card is now linked to %s
 primebank.card.owner.mismatch=This card belongs to another player
+
+# Card tooltips
+primebank.card.tooltip.unlinked=Not linked
+primebank.card.tooltip.owner=Owner: %s
+primebank.card.tooltip.id=Card ID: %s
