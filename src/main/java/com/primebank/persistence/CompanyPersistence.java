@@ -25,6 +25,18 @@ public final class CompanyPersistence {
             for (File f : files) {
                 Company c = JsonUtil.read(f, Company.class);
                 if (c != null && c.id != null) {
+                    if (c.valuationHistoryCents == null) {
+                        c.valuationHistoryCents = new java.util.ArrayList<>();
+                    } else if (c.valuationHistoryCents.size() > 26) {
+                        /*
+                         English: Trim valuation history to last 26 entries to honor UI graph cap.
+                         Español: Recortar el historial de valoraciones a las últimas 26 entradas para respetar el límite de la UI.
+                        */
+                        int excess = c.valuationHistoryCents.size() - 26;
+                        for (int i = 0; i < excess; i++) {
+                            c.valuationHistoryCents.remove(0);
+                        }
+                    }
                     PrimeBankState.get().companies().put(c);
                     // English: If there's a stored company name and no display mapping yet, set it so UIs (POS) show it.
                     // Español: Si hay nombre almacenado y no hay mapeo visible aún, establecerlo para que las UIs (POS) lo muestren.
