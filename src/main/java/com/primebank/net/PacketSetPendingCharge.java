@@ -37,9 +37,15 @@ public class PacketSetPendingCharge implements IMessage {
                 if (message.cents <= 0) {
                     PrimeBankState.get().clearPendingCharge(companyId);
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.pending.cleared"));
+                    // English: Persist snapshot to disk so pending map survives restarts.
+                    // Español: Persistir snapshot en disco para que el mapa pendiente sobreviva reinicios.
+                    com.primebank.persistence.BankPersistence.saveAllAsync();
                 } else {
                     PrimeBankState.get().setPendingCharge(companyId, message.cents);
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.pending.set", Money.formatUsd(message.cents)));
+                    // English: Persist snapshot to disk so pending map survives restarts.
+                    // Español: Persistir snapshot en disco para que el mapa pendiente sobreviva reinicios.
+                    com.primebank.persistence.BankPersistence.saveAllAsync();
                 }
             });
             return null;

@@ -47,6 +47,23 @@ public final class PrimeBankState {
     }
     public void clearPendingCharge(String companyId) { if (companyId != null) posPending.remove(companyId); }
 
+    /*
+     English: Return a snapshot view of all pending charges.
+     Español: Devolver una vista instantánea de todos los cargos pendientes.
+    */
+    public java.util.Map<String, Long> getAllPendingCharges() {
+        return java.util.Collections.unmodifiableMap(new java.util.HashMap<>(posPending));
+    }
+
+    /*
+     English: Replace the pending charges map from persistence on server load.
+     Español: Reemplazar el mapa de cargos pendientes desde la persistencia al cargar el servidor.
+    */
+    public void loadPendingCharges(java.util.Map<String, Long> data) {
+        posPending.clear();
+        if (data != null) posPending.putAll(data);
+    }
+
     public Account ensureCentralAccount() {
         if (!accounts.exists(CENTRAL_ACCOUNT_ID)) {
             PrimeBankMod.LOGGER.info("[PrimeBank] Creating central bank account / Creando cuenta del banco central");

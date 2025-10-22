@@ -37,6 +37,11 @@ public final class BankPersistence {
             reg.create(r.id, type, r.ownerUuid == null ? null : java.util.UUID.fromString(r.ownerUuid), r.balanceCents);
         }
         PrimeBankMod.LOGGER.info("[PrimeBank] Loaded accounts: {}", snap.accounts.size());
+        // English: Load pending POS charges map if present.
+        // Español: Cargar el mapa de cargos POS pendientes si existe.
+        if (snap.posPending != null) {
+            PrimeBankState.get().loadPendingCharges(snap.posPending);
+        }
     }
 
     /*
@@ -69,6 +74,9 @@ public final class BankPersistence {
             r.balanceCents = a.getBalanceCents();
             snap.accounts.add(r);
         }
+        // English: Include a copy of pending POS charges to persist across restarts.
+        // Español: Incluir una copia de los cargos POS pendientes para persistir entre reinicios.
+        snap.posPending = new java.util.HashMap<>(PrimeBankState.get().getAllPendingCharges());
         JsonUtil.write(file, snap);
         PrimeBankMod.LOGGER.info("[PrimeBank] Snapshot saved: {} accounts / cuentas", snap.accounts.size());
     }
@@ -80,6 +88,8 @@ public final class BankPersistence {
     public static class AccountsSnapshot {
         @SerializedName("accounts")
         public List<AccountRecord> accounts;
+        @SerializedName("posPending")
+        public java.util.Map<String, Long> posPending;
     }
 
     public static class AccountRecord {
