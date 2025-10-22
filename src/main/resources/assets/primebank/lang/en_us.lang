@@ -67,6 +67,13 @@ primebank.pos.error.no_pending=No pending charge set
 primebank.pos.linked=POS linked to company %s
 primebank.pos.linked.already=POS already linked to company %s
 
+# POS per-block config
+primebank.pos.config.title=Configure POS Price
+primebank.pos.config.hint=Enter an amount like 10 or 10.50 and press OK
+primebank.pos.price.set=POS price set: %s
+primebank.pos.price.bad_amount=Invalid price amount
+primebank.pos.price.not_owner=Only the company owner can configure this POS
+
 # UI buttons
 ui.primebank.ok=Confirm
 ui.primebank.cancel=Cancel

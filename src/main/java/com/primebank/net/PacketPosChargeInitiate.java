@@ -42,7 +42,7 @@ public class PacketPosChargeInitiate implements IMessage {
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.not_linked"));
                     return;
                 }
-                long cents = com.primebank.core.state.PrimeBankState.get().getPendingCharge(companyId);
+                long cents = t.pendingCents;
                 if (cents <= 0) {
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.no_pending"));
                     return;

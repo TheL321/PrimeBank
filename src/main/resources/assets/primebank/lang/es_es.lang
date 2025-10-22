@@ -66,6 +66,13 @@ primebank.pos.error.no_pending=No hay un cobro pendiente establecido
 primebank.pos.linked=POS enlazado a la empresa %s
 primebank.pos.linked.already=POS ya está enlazado a la empresa %s
 
+# Configuración por POS
+primebank.pos.config.title=Configurar Precio del POS
+primebank.pos.config.hint=Escribe un monto como 10 o 10.50 y presiona Aceptar
+primebank.pos.price.set=Precio del POS establecido: %s
+primebank.pos.price.bad_amount=Monto de precio inválido
+primebank.pos.price.not_owner=Solo el dueño de la empresa puede configurar este POS
+
 # Botones de interfaz
 ui.primebank.ok=Confirmar
 ui.primebank.cancel=Cancelar

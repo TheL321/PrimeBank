@@ -15,6 +15,7 @@ import net.minecraft.tileentity.TileEntity;
 
 import com.primebank.PrimeBankMod;
 import com.primebank.net.PacketPosChargeInitiate;
+import com.primebank.net.PacketPosOpenConfigRequest;
 import com.primebank.core.accounts.CompanyAccounts;
 import com.primebank.content.items.ItemCard;
 
@@ -107,6 +108,10 @@ public class BlockPOSPrimeBank extends Block {
             ItemStack held = playerIn.getHeldItem(hand);
             if (held != null && held.getItem() instanceof ItemCard) {
                 PrimeBankMod.NETWORK.sendToServer(new PacketPosChargeInitiate(pos));
+            } else {
+                // English: Not holding a card — request to open the POS config GUI (owner-only validation on server).
+                // Español: No sosteniendo una tarjeta — solicitar abrir la GUI de configuración del POS (validación de dueño en el servidor).
+                PrimeBankMod.NETWORK.sendToServer(new PacketPosOpenConfigRequest(pos));
             }
             return true;
         }
