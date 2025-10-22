@@ -10,6 +10,8 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.renderer.GlStateManager;
 
+import org.lwjgl.input.Mouse;
+
 import com.primebank.PrimeBankMod;
 import com.primebank.net.PacketMarketDetailsRequest;
 
@@ -30,6 +32,11 @@ public class GuiCompanyDetails extends GuiScreen {
     private boolean tradingBlocked = true;
     private boolean youAreOwner = false;
     private long detailsFetchedAtMs = 0L;
+    private int contentTop;
+    private int contentBottom;
+    private int contentLeft;
+    private int contentRight;
+    private float scrollOffset = 0f;
 
     private GuiButton btnBuy;
     private GuiButton btnRefresh;
@@ -42,7 +49,7 @@ public class GuiCompanyDetails extends GuiScreen {
     @Override
     public void initGui() {
         int midX = this.width / 2;
-        int baseY = this.height / 2 + 20;
+        int baseY = this.height - 52; // English: Fix buttons near the bottom. Español: Fijar botones cerca del fondo.
         this.buttonList.clear();
         btnBuy = new GuiButton(0, midX - 100, baseY, 200, 20, I18n.format("primebank.market.details.buy"));
         btnRefresh = new GuiButton(1, midX - 100, baseY + 24, 98, 20, I18n.format("primebank.market.details.refresh"));
@@ -50,6 +57,13 @@ public class GuiCompanyDetails extends GuiScreen {
         this.buttonList.add(btnBuy);
         this.buttonList.add(btnRefresh);
         this.buttonList.add(btnClose);
+        // English: Define scrollable content viewport. Español: Definir el área de contenido desplazable.
+        contentTop = 28;
+        contentBottom = baseY - 12;
+        if (contentBottom <= contentTop) contentBottom = contentTop + 40;
+        contentLeft = 20;
+        contentRight = this.width - 20;
+        scrollOffset = 0f;
         requestDetails();
         updateButtons();
     }
@@ -84,36 +98,111 @@ public class GuiCompanyDetails extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();
-        String title = I18n.format("primebank.market.details.title", displayNameOrId());
-        int centerX = this.width / 2;
-        int y = 40;
-        int maxWidth = Math.max(160, this.width - 80);
-        drawCenteredScaledString(title, centerX, y, 0xFFFFFF, maxWidth);
-
-        y = 64;
-        String valuationLine = I18n.format("primebank.market.details.valuation", com.primebank.core.Money.formatUsd(valuationCurrentCents));
-        drawCenteredScaledString(valuationLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
-        if (valuationHistory.length > 0) {
-            y = drawGraph(centerX, y) + 6;
-            drawHistorySummary(centerX, y, maxWidth);
-            y += 16;
-        }
-        String priceLine = I18n.format("primebank.market.details.price", com.primebank.core.Money.formatUsd(pricePerShareCents));
-        drawCenteredScaledString(priceLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
-        String listedLine = I18n.format("primebank.market.details.listed", listedShares);
-        drawCenteredScaledString(listedLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
-        String yourLine = I18n.format("primebank.market.details.your_holdings", yourHoldings);
-        drawCenteredScaledString(yourLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
-        if (youAreOwner) {
-            String ownerLine = I18n.format("primebank.market.details.you_are_owner");
-            drawCenteredScaledString(ownerLine, centerX, y, 0x99FF99, maxWidth); y += 12;
-        }
-        if (tradingBlocked) {
-            String blocked = I18n.format("primebank.market.details.blocked");
-            drawCenteredScaledString(blocked, centerX, y, 0xFF6666, maxWidth); y += 12;
-        }
-        adjustButtonPositions(y);
+        // English: Draw viewport background. Español: Dibujar fondo del área de vista.
+        Gui.drawRect(contentLeft, contentTop, contentRight, contentBottom, 0x22000000);
+        drawContent(mouseX, mouseY);
         super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
+    /*
+     English: Render content inside a scrollable viewport.
+     Español: Renderizar contenido dentro de una ventana desplazable.
+    */
+    private void drawContent(int mouseX, int mouseY) {
+        int centerX = this.width / 2;
+        int maxWidth = Math.max(160, this.width - 80);
+        boolean hover = mouseX >= contentLeft && mouseX <= contentRight && mouseY >= contentTop && mouseY <= contentBottom;
+        handleScrollWheel(hover);
+        int visibleH = contentBottom - contentTop;
+        int totalH = computeContentHeight();
+        if (totalH < visibleH) totalH = visibleH;
+        if (scrollOffset < 0f) scrollOffset = 0f;
+        float maxScroll = Math.max(0f, totalH - visibleH);
+        if (scrollOffset > maxScroll) scrollOffset = maxScroll;
+
+        int y = contentTop + 4 - (int)scrollOffset;
+        // Title
+        if (y + 12 >= contentTop && y <= contentBottom)
+            drawCenteredScaledString(I18n.format("primebank.market.details.title", displayNameOrId()), centerX, y, 0xFFFFFF, maxWidth);
+        y += 14;
+        // Valuation
+        if (y + 12 >= contentTop && y <= contentBottom)
+            drawCenteredScaledString(I18n.format("primebank.market.details.valuation", com.primebank.core.Money.formatUsd(valuationCurrentCents)), centerX, y, 0xDDDDDD, maxWidth);
+        y += 12;
+        // Graph and summary
+        if (valuationHistory.length > 0) {
+            int graphBlock = 70 + 12; // graph height + caption
+            if (y + graphBlock >= contentTop && y <= contentBottom) {
+                y = drawGraph(centerX, y);
+            } else {
+                y += graphBlock;
+            }
+            y += 6; // spacing
+            if (valuationHistory.length >= 2) {
+                if (y + 12 >= contentTop && y <= contentBottom)
+                    drawHistorySummary(centerX, y, maxWidth);
+                y += 16;
+            }
+        }
+        // Price
+        if (y + 12 >= contentTop && y <= contentBottom)
+            drawCenteredScaledString(I18n.format("primebank.market.details.price", com.primebank.core.Money.formatUsd(pricePerShareCents)), centerX, y, 0xDDDDDD, maxWidth);
+        y += 12;
+        // Listed
+        if (y + 12 >= contentTop && y <= contentBottom)
+            drawCenteredScaledString(I18n.format("primebank.market.details.listed", listedShares), centerX, y, 0xDDDDDD, maxWidth);
+        y += 12;
+        // Holdings
+        if (y + 12 >= contentTop && y <= contentBottom)
+            drawCenteredScaledString(I18n.format("primebank.market.details.your_holdings", yourHoldings), centerX, y, 0xDDDDDD, maxWidth);
+        y += 12;
+        // Owner note
+        if (youAreOwner) {
+            if (y + 12 >= contentTop && y <= contentBottom)
+                drawCenteredScaledString(I18n.format("primebank.market.details.you_are_owner"), centerX, y, 0x99FF99, maxWidth);
+            y += 12;
+        }
+        // Trading blocked note
+        if (tradingBlocked) {
+            if (y + 12 >= contentTop && y <= contentBottom)
+                drawCenteredScaledString(I18n.format("primebank.market.details.blocked"), centerX, y, 0xFF6666, maxWidth);
+            y += 12;
+        }
+    }
+
+    /*
+     English: Calculate total content height for scrolling.
+     Español: Calcular la altura total del contenido para el desplazamiento.
+    */
+    private int computeContentHeight() {
+        int h = 0;
+        h += 14; // title
+        h += 12; // valuation
+        if (valuationHistory.length > 0) {
+            h += 70 + 12; // graph + caption
+            h += 6; // spacing
+            if (valuationHistory.length >= 2) {
+                h += 16; // summary + spacing
+            }
+        }
+        h += 12; // price
+        h += 12; // listed
+        h += 12; // holdings
+        if (youAreOwner) h += 12;
+        if (tradingBlocked) h += 12;
+        return h + 4; // small padding
+    }
+
+    /*
+     English: Handle mouse wheel to adjust scroll offset.
+     Español: Manejar la rueda del ratón para ajustar el desplazamiento.
+    */
+    private void handleScrollWheel(boolean hover) {
+        if (!hover) return;
+        int wheel = Mouse.getDWheel();
+        if (wheel != 0) {
+            scrollOffset -= (wheel / 120f) * 24f; // English: step per wheel notch. Español: paso por muesca.
+        }
     }
 
     @Override
