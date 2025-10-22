@@ -134,12 +134,15 @@ primebank.market.buy.error.company_no_owner=Company has no owner set
 primebank.market.buy.error.majority_violation=Operation would violate majority rule
 
 # Market details & buy dialog
+# English: Refresh button label for updating market company details.
+# Español: Etiqueta del botón para actualizar los detalles de empresa en el mercado.
 primebank.market.details.title=Company Details: %s
 primebank.market.details.price=Price per share: %s
 primebank.market.details.listed=Listed shares: %s
 primebank.market.details.your_holdings=Your holdings: %s
 primebank.market.details.blocked=Trading is blocked until first valuation
 primebank.market.details.buy=Buy Shares
+primebank.market.details.refresh=Refresh
 primebank.market.buydialog.title=Buy shares in %s
 primebank.market.buydialog.price_each=Price each: %s
 primebank.market.buydialog.listed_available=Listed available: %s

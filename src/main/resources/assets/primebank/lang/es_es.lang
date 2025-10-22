@@ -153,6 +153,7 @@ primebank.market.details.listed=Acciones listadas: %s
 primebank.market.details.your_holdings=Tus tenencias: %s
 primebank.market.details.blocked=El comercio está bloqueado hasta la primera valoración
 primebank.market.details.buy=Comprar Acciones
+primebank.market.details.refresh=Actualizar
 primebank.market.buydialog.title=Comprar acciones en %s
 primebank.market.buydialog.price_each=Precio cada una: %s
 primebank.market.buydialog.listed_available=Listadas disponibles: %s
