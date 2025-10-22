@@ -109,6 +109,7 @@ public class GuiCompanyDetails extends GuiScreen {
             String blocked = I18n.format("primebank.market.details.blocked");
             drawCenteredScaledString(blocked, centerX, y, 0xFF6666, maxWidth); y += 12;
         }
+        adjustButtonPositions(y);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
@@ -145,6 +146,21 @@ public class GuiCompanyDetails extends GuiScreen {
             sb.append(com.primebank.core.Money.formatUsd(val));
         }
         return sb.toString();
+    }
+
+    /*
+     English: Move buttons down if content extends near them to avoid overlap.
+     Español: Mover los botones hacia abajo si el contenido se acerca para evitar superposición.
+    */
+    private void adjustButtonPositions(int contentBottomY) {
+        if (btnBuy == null || btnRefresh == null || btnClose == null) return;
+        int defaultTop = this.height / 2 + 20;
+        int safeTop = Math.max(defaultTop, contentBottomY + 12);
+        btnBuy.y = safeTop;
+        btnRefresh.y = safeTop + 24;
+        btnClose.y = safeTop + 24;
+        btnRefresh.x = this.width / 2 - 100;
+        btnClose.x = this.width / 2 + 2;
     }
 
     /*
