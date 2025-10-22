@@ -27,6 +27,9 @@ public class GuiBuyDialog extends GuiScreen {
     private GuiTextField txtShares;
     private GuiButton btnConfirm;
     private GuiButton btnCancel;
+    private int contentTop;
+    private int sharesFieldY;
+    private int buttonsY;
 
     private final String buyerFeePercentLabel = formatBps(MarketPrimaryService.BUYER_FEE_BPS);
     private final String issuerFeePercentLabel = formatBps(MarketPrimaryService.ISSUER_FEE_BPS);
@@ -42,13 +45,15 @@ public class GuiBuyDialog extends GuiScreen {
     @Override
     public void initGui() {
         int midX = this.width / 2;
-        int midY = this.height / 2;
         this.buttonList.clear();
-        this.txtShares = new GuiTextField(0, this.fontRenderer, midX - 60, midY, 120, 20);
+        this.contentTop = this.height / 2 - 90;
+        this.sharesFieldY = contentTop + 56;
+        this.buttonsY = sharesFieldY + 120;
+        this.txtShares = new GuiTextField(0, this.fontRenderer, midX - 60, sharesFieldY, 120, 20);
         this.txtShares.setMaxStringLength(6);
         this.txtShares.setText("1");
-        this.btnConfirm = new GuiButton(1, midX - 100, midY + 30, 98, 20, I18n.format("primebank.market.buydialog.buy"));
-        this.btnCancel = new GuiButton(2, midX + 2, midY + 30, 98, 20, I18n.format("ui.primebank.cancel"));
+        this.btnConfirm = new GuiButton(1, midX - 100, buttonsY, 98, 20, I18n.format("primebank.market.buydialog.buy"));
+        this.btnCancel = new GuiButton(2, midX + 2, buttonsY, 98, 20, I18n.format("ui.primebank.cancel"));
         this.buttonList.add(btnConfirm);
         this.buttonList.add(btnCancel);
         updateButtonState();
@@ -72,7 +77,7 @@ public class GuiBuyDialog extends GuiScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();
         int midX = this.width / 2;
-        int topY = this.height / 2 - 40;
+        int topY = this.contentTop;
         String title = I18n.format("primebank.market.buydialog.title", displayName);
         drawCenteredString(this.fontRenderer, title, midX, topY, 0xFFFFFF);
         topY += 14;
@@ -84,8 +89,10 @@ public class GuiBuyDialog extends GuiScreen {
         topY += 18;
         String prompt = I18n.format("primebank.market.buydialog.enter_shares");
         drawCenteredString(this.fontRenderer, prompt, midX, topY, 0xDDDDDD);
+        this.txtShares.x = midX - 60;
+        this.txtShares.y = sharesFieldY;
         this.txtShares.drawTextBox();
-        topY += 26;
+        topY = sharesFieldY + 36;
         int shares = parseShares();
         long gross = calcGross(shares);
         long buyerFee = calcBuyerFee(gross);
