@@ -95,12 +95,9 @@ public class GuiCompanyDetails extends GuiScreen {
         drawCenteredScaledString(valuationLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
         if (valuationHistory.length > 0) {
             drawGraph(centerX, y);
-            y += 110;
-            String historyLine = I18n.format("primebank.market.details.valuation_history", valuationHistory.length, formatValuationHistory());
-            y = drawWrappedCentered(historyLine, centerX, y, 0xBBBBBB, maxWidth);
-            y += 4;
+            y += 80;
             drawHistorySummary(centerX, y, maxWidth);
-            y += 24;
+            y += 16;
         }
         String priceLine = I18n.format("primebank.market.details.price", com.primebank.core.Money.formatUsd(pricePerShareCents));
         drawCenteredScaledString(priceLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
@@ -145,8 +142,8 @@ public class GuiCompanyDetails extends GuiScreen {
      Español: Dibujar el historial de valoración como un gráfico relleno para las últimas 26 semanas.
     */
     private void drawGraph(int centerX, int topY) {
-        int width = Math.min(this.width - 80, 240);
-        int height = 88;
+        int width = Math.min(this.width - 80, 220);
+        int height = 70;
         int left = centerX - width / 2;
         int bottom = topY + height;
         Gui.drawRect(left, topY, left + width, bottom, 0x44000000);
@@ -203,13 +200,8 @@ public class GuiCompanyDetails extends GuiScreen {
         long latest = valuationHistory[valuationHistory.length - 1];
         long oldest = valuationHistory[Math.max(0, valuationHistory.length - 26)];
         String pct = formatChangePercent(oldest, latest);
-        String since = detailsFetchedAtMs <= 0L ? "" : formatSince(detailsFetchedAtMs);
         String changeLine = I18n.format("primebank.market.details.history_change", pct);
-        drawCenteredScaledString(changeLine, centerX, startY, 0xCCCCCC, maxWidth);
-        if (!since.isEmpty()) {
-            String refreshedLine = I18n.format("primebank.market.details.refreshed", since);
-            drawCenteredScaledString(refreshedLine, centerX, startY + 12, 0x888888, maxWidth);
-        }
+        drawCenteredScaledString(changeLine, centerX, startY, 0xBBBBBB, maxWidth);
     }
 
     private String formatChangePercent(long base, long current) {
