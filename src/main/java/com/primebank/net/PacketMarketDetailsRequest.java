@@ -1,6 +1,7 @@
 package com.primebank.net;
 
 import io.netty.buffer.ByteBuf;
+import java.util.List;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.IThreadListener;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
@@ -38,20 +39,32 @@ public class PacketMarketDetailsRequest implements IMessage {
                 com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies().get(cid);
                 String displayName = com.primebank.core.state.PrimeBankState.get().getCompanyName(cid);
                 if (displayName == null || displayName.isEmpty()) displayName = cid;
+                long valuationCurrent = 0L;
+                long[] valuationHistory = new long[0];
                 long pps = 0L;
                 int listed = 0;
                 int holdings = 0;
                 boolean blocked = true;
                 boolean owner = false;
                 if (c != null) {
-                    pps = c.valuationCurrentCents <= 0 ? 0L : (c.valuationCurrentCents / 101L);
+                    valuationCurrent = c.valuationCurrentCents;
+                    List<Long> historyList = c.valuationHistoryCents;
+                    if (historyList != null && !historyList.isEmpty()) {
+                        int max = Math.min(26, historyList.size());
+                        valuationHistory = new long[max];
+                        int start = historyList.size() - max;
+                        for (int i = 0; i < max; i++) {
+                            valuationHistory[i] = historyList.get(start + i);
+                        }
+                    }
+                    pps = valuationCurrent <= 0 ? 0L : (valuationCurrent / 101L);
                     listed = c.listedShares;
                     String key = p.getUniqueID().toString();
                     holdings = c.holdings == null ? 0 : c.holdings.getOrDefault(key, 0);
-                    blocked = c.valuationCurrentCents <= 0;
+                    blocked = valuationCurrent <= 0;
                     owner = c.ownerUuid != null && c.ownerUuid.equals(p.getUniqueID());
                 }
-                PacketMarketDetails resp = new PacketMarketDetails(cid, displayName, pps, listed, holdings, blocked, owner);
+                PacketMarketDetails resp = new PacketMarketDetails(cid, displayName, valuationCurrent, valuationHistory, pps, listed, holdings, blocked, owner);
                 com.primebank.PrimeBankMod.NETWORK.sendTo(resp, p);
             });
             return null;

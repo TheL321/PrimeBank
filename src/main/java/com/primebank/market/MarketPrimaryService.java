@@ -20,8 +20,10 @@ import com.primebank.persistence.CompanyPersistence;
   - Comprador paga bruto + 2.5% (al central); Empresa recibe bruto - 5% (al central)
 */
 public final class MarketPrimaryService {
-    private static final int BUYER_FEE_BPS = 250; // 2.5%
-    private static final int ISSUER_FEE_BPS = 500; // 5%
+    // English: Fee basis points for buyer (2.5%) and issuer (5%) in the primary market.
+    // Español: Puntos básicos de comisión para comprador (2.5%) y emisor (5%) en el mercado primario.
+    public static final int BUYER_FEE_BPS = 250; // 2.5%
+    public static final int ISSUER_FEE_BPS = 500; // 5%
 
     private static final MarketPrimaryService INSTANCE = new MarketPrimaryService();
 

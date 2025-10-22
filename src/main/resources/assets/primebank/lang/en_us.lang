@@ -143,11 +143,18 @@ primebank.market.details.your_holdings=Your holdings: %s
 primebank.market.details.blocked=Trading is blocked until first valuation
 primebank.market.details.buy=Buy Shares
 primebank.market.details.refresh=Refresh
+primebank.market.details.valuation=Valuation: %s
+primebank.market.details.valuation_history=Last %s valuations: %s
+primebank.market.details.you_are_owner=You are the company owner
 primebank.market.buydialog.title=Buy shares in %s
 primebank.market.buydialog.price_each=Price each: %s
 primebank.market.buydialog.listed_available=Listed available: %s
 primebank.market.buydialog.enter_shares=Enter shares to buy
 primebank.market.buydialog.buy=Buy
+primebank.market.buydialog.gross=Gross (%s shares): %s
+primebank.market.buydialog.buyer_fee=Buyer fee (%s): %s
+primebank.market.buydialog.total=Total to pay: %s
+primebank.market.buydialog.issuer_receives=Company receives (%s): %s
 
 # Card owner enforcement
 primebank.card.required=You must hold a PrimeBank Card to pay

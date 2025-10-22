@@ -58,11 +58,22 @@ public class PacketMarketBuy implements IMessage {
                     String displayName = com.primebank.core.state.PrimeBankState.get().getCompanyName(cid);
                     if (displayName == null || displayName.isEmpty()) displayName = cid;
                     c = com.primebank.core.state.PrimeBankState.get().companies().get(cid);
+                    long valuationCurrent = c == null ? 0L : c.valuationCurrentCents;
+                    long[] valuationHistory = new long[0];
+                    if (c != null && c.valuationHistoryCents != null && !c.valuationHistoryCents.isEmpty()) {
+                        int max = Math.min(26, c.valuationHistoryCents.size());
+                        valuationHistory = new long[max];
+                        int start = c.valuationHistoryCents.size() - max;
+                        for (int i = 0; i < max; i++) {
+                            valuationHistory[i] = c.valuationHistoryCents.get(start + i);
+                        }
+                    }
+                    long refreshedPps = valuationCurrent <= 0 ? 0L : (valuationCurrent / 101L);
                     int listed = c == null ? 0 : c.listedShares;
                     int yourHoldings = (c == null || c.holdings == null) ? 0 : c.holdings.getOrDefault(buyer.toString(), 0);
-                    boolean blocked = c == null || c.valuationCurrentCents <= 0;
+                    boolean blocked = valuationCurrent <= 0;
                     boolean owner = c != null && c.ownerUuid != null && c.ownerUuid.equals(buyer);
-                    com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketMarketDetails(cid, displayName, pps, listed, yourHoldings, blocked, owner), p);
+                    com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketMarketDetails(cid, displayName, valuationCurrent, valuationHistory, refreshedPps, listed, yourHoldings, blocked, owner), p);
                 } else {
                     p.sendMessage(new TextComponentTranslation("primebank.market.buy.error." + r.error));
                 }
