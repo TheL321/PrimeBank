@@ -145,6 +145,12 @@ primebank.market.buy.error.insufficient=Fondos insuficientes
 primebank.market.buy.error.ledger_error=Pago fallido
 primebank.market.buy.error.company_no_owner=La empresa no tiene dueño establecido
 primebank.market.buy.error.majority_violation=La operación violaría la regla de mayoría
+primebank.market.home.refresh=Actualizar lista
+primebank.market.home.no_companies=No hay empresas aprobadas aún
+primebank.market.home.total_companies=Empresas listadas: %s
+primebank.market.listing.valuation=Valoración: %s
+primebank.market.listing.price=Precio/acción: %s
+primebank.market.listing.listed=Listadas: %s
 
 # Detalles de mercado y diálogo de compra
 primebank.market.details.title=Detalles de Empresa: %s
