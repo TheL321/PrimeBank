@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
@@ -28,6 +29,7 @@ public class GuiCompanyDetails extends GuiScreen {
     private int yourHoldings = 0;
     private boolean tradingBlocked = true;
     private boolean youAreOwner = false;
+    private long detailsFetchedAtMs = 0L;
 
     private GuiButton btnBuy;
     private GuiButton btnRefresh;
@@ -92,8 +94,13 @@ public class GuiCompanyDetails extends GuiScreen {
         String valuationLine = I18n.format("primebank.market.details.valuation", com.primebank.core.Money.formatUsd(valuationCurrentCents));
         drawCenteredScaledString(valuationLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
         if (valuationHistory.length > 0) {
+            drawGraph(centerX, y);
+            y += 120;
             String historyLine = I18n.format("primebank.market.details.valuation_history", valuationHistory.length, formatValuationHistory());
             y = drawWrappedCentered(historyLine, centerX, y, 0xBBBBBB, maxWidth);
+            y += 4;
+            drawHistorySummary(centerX, y, maxWidth);
+            y += 24;
         }
         String priceLine = I18n.format("primebank.market.details.price", com.primebank.core.Money.formatUsd(pricePerShareCents));
         drawCenteredScaledString(priceLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
@@ -129,7 +136,104 @@ public class GuiCompanyDetails extends GuiScreen {
         this.yourHoldings = yourHoldings;
         this.tradingBlocked = tradingBlocked;
         this.youAreOwner = youAreOwner;
+        this.detailsFetchedAtMs = System.currentTimeMillis();
         updateButtons();
+    }
+
+    /*
+     English: Draw valuation history as a simple filled graph for the last 26 weeks.
+     Español: Dibujar el historial de valoración como un gráfico relleno para las últimas 26 semanas.
+    */
+    private void drawGraph(int centerX, int topY) {
+        int width = Math.min(this.width - 60, 260);
+        int height = 110;
+        int left = centerX - width / 2;
+        int bottom = topY + height;
+        Gui.drawRect(left, topY, left + width, bottom, 0x44000000);
+        if (valuationHistory.length == 0) return;
+        long max = 0L;
+        long min = Long.MAX_VALUE;
+        int count = valuationHistory.length;
+        int start = Math.max(0, count - 26);
+        for (int i = start; i < count; i++) {
+            long val = valuationHistory[i];
+            if (val > max) max = val;
+            if (val < min) min = val;
+        }
+        if (max <= 0L) return;
+        if (min == Long.MAX_VALUE) min = 0L;
+        float range = (float)(max - min);
+        if (range <= 0f) range = Math.max(1f, max);
+        int samples = count - start;
+        float stepX = samples > 1 ? (float)width / (samples - 1) : width;
+        int prevX = -1;
+        int prevY = -1;
+        for (int idx = 0; idx < samples; idx++) {
+            long val = valuationHistory[start + idx];
+            float normalized = (val - min) / range;
+            int x = left + Math.round(stepX * idx);
+            int y = bottom - Math.round(normalized * (height - 6)) - 3;
+            Gui.drawRect(x - 1, y - 1, x + 1, y + 1, 0xFF66CCFF);
+            if (prevX >= 0) {
+                drawVerticalQuad(prevX, prevY, x, y, bottom);
+            }
+            prevX = x;
+            prevY = y;
+        }
+        String caption = I18n.format("primebank.market.details.graph_caption", samples);
+        drawCenteredScaledString(caption, centerX, bottom + 6, 0xAAAAAA, width);
+    }
+
+    private void drawVerticalQuad(int x1, int y1, int x2, int y2, int bottom) {
+        int minX = Math.min(x1, x2);
+        int maxX = Math.max(x1, x2);
+        int minY = Math.min(y1, y2);
+        int maxY = Math.max(y1, y2);
+        if (maxX <= minX) maxX = minX + 1;
+        Gui.drawRect(minX, minY, maxX, maxY, 0x8866CCFF);
+        Gui.drawRect(minX, Math.min(bottom, Math.max(maxY, minY)), maxX, bottom, 0x224499FF);
+    }
+
+    /*
+     English: Show percentage change and last valuation timestamp information.
+     Español: Mostrar el cambio porcentual y la información de la última valoración.
+    */
+    private void drawHistorySummary(int centerX, int startY, int maxWidth) {
+        if (valuationHistory == null || valuationHistory.length < 2) return;
+        long latest = valuationHistory[valuationHistory.length - 1];
+        long oldest = valuationHistory[Math.max(0, valuationHistory.length - 26)];
+        String pct = formatChangePercent(oldest, latest);
+        String since = detailsFetchedAtMs <= 0L ? "" : formatSince(detailsFetchedAtMs);
+        String changeLine = I18n.format("primebank.market.details.history_change", pct);
+        drawCenteredScaledString(changeLine, centerX, startY, 0xCCCCCC, maxWidth);
+        if (!since.isEmpty()) {
+            String refreshedLine = I18n.format("primebank.market.details.refreshed", since);
+            drawCenteredScaledString(refreshedLine, centerX, startY + 12, 0x888888, maxWidth);
+        }
+    }
+
+    private String formatChangePercent(long base, long current) {
+        if (base <= 0L) {
+            return current > 0L ? "+∞" : "0%";
+        }
+        double change = ((double) current - (double) base) / (double) base * 100.0;
+        return String.format("%+.2f%%", change);
+    }
+
+    /*
+     English: Format how long ago the details were fetched (seconds/minutes/hours).
+     Español: Formatear cuánto tiempo ha pasado desde que se obtuvieron los detalles (segundos/minutos/horas).
+    */
+    private String formatSince(long timestampMs) {
+        long delta = Math.max(0L, System.currentTimeMillis() - timestampMs);
+        long seconds = delta / 1000L;
+        if (seconds < 60L) return I18n.format("primebank.time.seconds", seconds);
+        long minutes = seconds / 60L;
+        if (minutes < 60L) return I18n.format("primebank.time.minutes", minutes);
+        long hours = minutes / 60L;
+        if (hours < 24L) return I18n.format("primebank.time.hours", hours);
+        long days = hours / 24L;
+        return I18n.format("primebank.time.days", days);
     }
 
     /*
