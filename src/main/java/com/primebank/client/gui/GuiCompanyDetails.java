@@ -94,8 +94,7 @@ public class GuiCompanyDetails extends GuiScreen {
         String valuationLine = I18n.format("primebank.market.details.valuation", com.primebank.core.Money.formatUsd(valuationCurrentCents));
         drawCenteredScaledString(valuationLine, centerX, y, 0xDDDDDD, maxWidth); y += 12;
         if (valuationHistory.length > 0) {
-            drawGraph(centerX, y);
-            y += 80;
+            y = drawGraph(centerX, y) + 6;
             drawHistorySummary(centerX, y, maxWidth);
             y += 16;
         }
@@ -141,33 +140,40 @@ public class GuiCompanyDetails extends GuiScreen {
      English: Draw valuation history as a simple filled graph for the last 26 weeks.
      Español: Dibujar el historial de valoración como un gráfico relleno para las últimas 26 semanas.
     */
-    private void drawGraph(int centerX, int topY) {
+    private int drawGraph(int centerX, int topY) {
         int width = Math.min(this.width - 80, 220);
         int height = 70;
         int left = centerX - width / 2;
         int bottom = topY + height;
         Gui.drawRect(left, topY, left + width, bottom, 0x44000000);
-        if (valuationHistory.length == 0) return;
-        long max = 0L;
+        if (valuationHistory.length == 0) {
+            return bottom + 12;
+        }
+        long max = Long.MIN_VALUE;
         long min = Long.MAX_VALUE;
         int count = valuationHistory.length;
         int start = Math.max(0, count - 26);
+        int samples = count - start;
+        if (samples <= 0) samples = count;
         for (int i = start; i < count; i++) {
             long val = valuationHistory[i];
             if (val > max) max = val;
             if (val < min) min = val;
         }
-        if (max <= 0L) return;
-        if (min == Long.MAX_VALUE) min = 0L;
-        float range = (float)(max - min);
-        if (range <= 0f) range = Math.max(1f, max);
-        int samples = count - start;
+        if (min == Long.MAX_VALUE) {
+            min = 0L;
+        }
+        if (max == Long.MIN_VALUE) {
+            max = min;
+        }
+        boolean flat = max == min;
+        float range = flat ? 1f : (float)(max - min);
         float stepX = samples > 1 ? (float)width / (samples - 1) : width;
         int prevX = -1;
         int prevY = -1;
         for (int idx = 0; idx < samples; idx++) {
             long val = valuationHistory[start + idx];
-            float normalized = (val - min) / range;
+            float normalized = flat ? 0.5f : (val - min) / range;
             int x = left + Math.round(stepX * idx);
             int y = bottom - Math.round(normalized * (height - 6)) - 3;
             Gui.drawRect(x - 1, y - 1, x + 1, y + 1, 0xFF66CCFF);
@@ -179,6 +185,7 @@ public class GuiCompanyDetails extends GuiScreen {
         }
         String caption = I18n.format("primebank.market.details.graph_caption", samples);
         drawCenteredScaledString(caption, centerX, bottom + 6, 0xAAAAAA, width);
+        return bottom + 12;
     }
 
     private void drawVerticalQuad(int x1, int y1, int x2, int y2, int bottom) {
