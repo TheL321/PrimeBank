@@ -88,7 +88,13 @@ public final class ValuationService {
             long sales = c.salesWeekCents;
             boolean changed = false;
 
-            while (now >= dueAt) {
+            // English: Safeguard to prevent runaway catch-up loops (max 52 weeks = 1 year).
+            // Español: Protección para prevenir bucles catch-up descontrolados (máx 52 semanas = 1 año).
+            int maxCatchupWeeks = 52;
+            int catchupCount = 0;
+            
+            while (now >= dueAt && catchupCount < maxCatchupWeeks) {
+                catchupCount++;
                 long valuation;
                 if (lastValuation <= 0) {
                     valuation = Math.max(0L, Math.multiplyExact(sales, 6L));

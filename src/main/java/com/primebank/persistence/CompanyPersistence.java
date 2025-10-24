@@ -58,7 +58,9 @@ public final class CompanyPersistence {
                             // Español: Restaurar valoración actual desde el último punto del historial si falta.
                             c.valuationCurrentCents = lastVal;
                         }
-                        if (c.lastValuationAt <= 0L && c.approvedAt > 0L) {
+                        // English: Fix invalid lastValuationAt (<=0 or before approvedAt) to prevent catch-up loop bug.
+                        // Español: Reparar lastValuationAt inválido (<=0 o antes de approvedAt) para prevenir bug de catch-up.
+                        if (c.approvedAt > 0L && (c.lastValuationAt <= 0L || c.lastValuationAt < c.approvedAt)) {
                             // English: Approximate last valuation timestamp from approvedAt and history length.
                             // Español: Aproximar la marca de tiempo de la última valoración desde approvedAt y longitud del historial.
                             long DAY_MS = 24L * 60L * 60L * 1000L;
