@@ -31,6 +31,33 @@ public final class CompanyRegistry {
         });
     }
 
+    /*
+     English: Create a new company for the given owner with a unique id, allowing multiple companies per owner.
+     Español: Crear una nueva empresa para el dueño con un id único, permitiendo múltiples empresas por dueño.
+    */
+    public Company createNew(UUID owner) {
+        String base = "c:" + owner.toString();
+        String id = base;
+        // English: Generate a unique id using a time-based suffix; retry if collision occurs.
+        // Español: Generar un id único usando un sufijo basado en tiempo; reintentar si hay colisión.
+        int tries = 0;
+        do {
+            String suffix = Long.toHexString(System.nanoTime());
+            if (tries > 0) suffix += "_" + tries;
+            id = base + ":" + suffix;
+            tries++;
+        } while (companies.containsKey(id));
+        Company c = new Company();
+        c.id = id;
+        c.ownerUuid = owner;
+        c.name = null;
+        c.description = null;
+        c.approved = false;
+        c.appliedAt = System.currentTimeMillis();
+        companies.put(id, c);
+        return c;
+    }
+
     public void put(Company c) {
         companies.put(c.id, c);
     }

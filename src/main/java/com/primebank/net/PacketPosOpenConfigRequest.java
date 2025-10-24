@@ -37,14 +37,28 @@ public class PacketPosOpenConfigRequest implements IMessage {
                 if (!(te instanceof TilePosPrimeBank)) return;
                 TilePosPrimeBank t = (TilePosPrimeBank) te;
                 if (t.companyId == null) {
-                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.not_linked"));
+                    // English: Build the player's company list (id + display label) to open selection GUI.
+                    // Español: Construir la lista de empresas del jugador (id + etiqueta) para abrir GUI de selección.
+                    java.util.List<String> ids = new java.util.ArrayList<>();
+                    java.util.List<String> labels = new java.util.ArrayList<>();
+                    java.util.UUID me = p.getUniqueID();
+                    for (com.primebank.core.company.Company c : com.primebank.core.state.PrimeBankState.get().companies().all()) {
+                        if (c.ownerUuid != null && c.ownerUuid.equals(me)) {
+                            ids.add(c.id);
+                            labels.add(com.primebank.core.state.PrimeBankState.get().getCompanyDisplay(c.id));
+                        }
+                    }
+                    if (ids.isEmpty()) {
+                        p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.no_companies"));
+                        return;
+                    }
+                    com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketOpenPosSelectCompany(pos, ids, labels), p);
                     return;
                 }
-                boolean isOwner = false;
-                if (t.companyId.startsWith("c:")) {
-                    String expected = "c:" + p.getUniqueID().toString();
-                    isOwner = expected.equals(t.companyId);
-                }
+                // English: Validate ownership via company registry instead of relying on id prefix.
+                // Español: Validar propiedad a través del registro de empresas en lugar de depender del prefijo del id.
+                com.primebank.core.company.Company company = com.primebank.core.state.PrimeBankState.get().companies().get(t.companyId);
+                boolean isOwner = company != null && company.ownerUuid != null && company.ownerUuid.equals(p.getUniqueID());
                 if (!isOwner) {
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.price.not_owner"));
                     return;

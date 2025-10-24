@@ -8,7 +8,6 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 import com.primebank.core.Money;
-import com.primebank.core.accounts.CompanyAccounts;
 import com.primebank.core.state.PrimeBankState;
 
 /*
@@ -17,15 +16,25 @@ import com.primebank.core.state.PrimeBankState;
 */
 public class PacketSetPendingCharge implements IMessage {
     public long cents;
+    public String companyId;
 
     public PacketSetPendingCharge() {}
-    public PacketSetPendingCharge(long cents) { this.cents = cents; }
+    public PacketSetPendingCharge(long cents, String companyId) {
+        this.cents = cents;
+        this.companyId = companyId;
+    }
 
     @Override
-    public void fromBytes(ByteBuf buf) { this.cents = buf.readLong(); }
+    public void fromBytes(ByteBuf buf) {
+        this.cents = buf.readLong();
+        this.companyId = net.minecraftforge.fml.common.network.ByteBufUtils.readUTF8String(buf);
+    }
 
     @Override
-    public void toBytes(ByteBuf buf) { buf.writeLong(this.cents); }
+    public void toBytes(ByteBuf buf) {
+        buf.writeLong(this.cents);
+        net.minecraftforge.fml.common.network.ByteBufUtils.writeUTF8String(buf, this.companyId == null ? "" : this.companyId);
+    }
 
     public static class Handler implements IMessageHandler<PacketSetPendingCharge, IMessage> {
         @Override
@@ -33,15 +42,23 @@ public class PacketSetPendingCharge implements IMessage {
             IThreadListener thread = ctx.getServerHandler().player.getServerWorld();
             thread.addScheduledTask(() -> {
                 EntityPlayerMP p = ctx.getServerHandler().player;
-                String companyId = CompanyAccounts.ensureDefault(p.getUniqueID());
+                String resolvedId = message.companyId;
+                if (resolvedId == null || resolvedId.trim().isEmpty()) {
+                    resolvedId = com.primebank.core.accounts.CompanyAccounts.ensureDefault(p.getUniqueID());
+                }
+                com.primebank.core.company.Company company = PrimeBankState.get().companies().get(resolvedId);
+                if (company == null || company.ownerUuid == null || !company.ownerUuid.equals(p.getUniqueID())) {
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.price.not_owner"));
+                    return;
+                }
                 if (message.cents <= 0) {
-                    PrimeBankState.get().clearPendingCharge(companyId);
+                    PrimeBankState.get().clearPendingCharge(resolvedId);
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.pending.cleared"));
                     // English: Persist snapshot to disk so pending map survives restarts.
                     // Español: Persistir snapshot en disco para que el mapa pendiente sobreviva reinicios.
                     com.primebank.persistence.BankPersistence.saveAllAsync();
                 } else {
-                    PrimeBankState.get().setPendingCharge(companyId, message.cents);
+                    PrimeBankState.get().setPendingCharge(resolvedId, message.cents);
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.pending.set", Money.formatUsd(message.cents)));
                     // English: Persist snapshot to disk so pending map survives restarts.
                     // Español: Persistir snapshot en disco para que el mapa pendiente sobreviva reinicios.

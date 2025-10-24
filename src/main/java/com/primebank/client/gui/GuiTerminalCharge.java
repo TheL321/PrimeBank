@@ -18,9 +18,16 @@ import com.primebank.net.PacketSetPendingCharge;
  Español: GUI del comerciante en el Terminal para ingresar un monto y presionar Cobrar.
 */
 public class GuiTerminalCharge extends GuiScreen {
+    private final String companyId;
+    private final String companyLabel;
     private GuiTextField input;
     private GuiButton btnCharge;
     private GuiButton btnCancel;
+
+    public GuiTerminalCharge(String companyId, String companyLabel) {
+        this.companyId = companyId;
+        this.companyLabel = companyLabel;
+    }
 
     @Override
     public void initGui() {
@@ -59,6 +66,11 @@ public class GuiTerminalCharge extends GuiScreen {
         String hint = I18n.format("primebank.pos.terminal.hint");
         drawCenteredString(this.fontRenderer, title, this.width / 2, this.height / 2 - 40, 0xFFFFFF);
         drawCenteredString(this.fontRenderer, hint, this.width / 2, this.height / 2 - 28, 0xAAAAAA);
+        if (companyLabel != null && !companyLabel.isEmpty()) {
+            // English: Show which company will receive the charges.
+            // Español: Mostrar qué empresa recibirá los cobros.
+            drawCenteredString(this.fontRenderer, companyLabel, this.width / 2, this.height / 2 - 52, 0xFFD700);
+        }
         if (this.input != null) this.input.drawTextBox();
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
@@ -69,7 +81,7 @@ public class GuiTerminalCharge extends GuiScreen {
             String text = this.input.getText();
             try {
                 long cents = Money.parseCents(text);
-                PrimeBankMod.NETWORK.sendToServer(new PacketSetPendingCharge(cents));
+                PrimeBankMod.NETWORK.sendToServer(new PacketSetPendingCharge(cents, companyId));
                 Minecraft.getMinecraft().player.sendMessage(new TextComponentTranslation("primebank.pos.pending.set", Money.formatUsd(cents)));
                 close();
             } catch (Exception ex) {

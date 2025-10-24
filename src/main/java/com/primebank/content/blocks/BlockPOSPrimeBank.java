@@ -49,38 +49,7 @@ public class BlockPOSPrimeBank extends Block {
             TileEntity te = worldIn.getTileEntity(pos);
             if (!(te instanceof TilePosPrimeBank)) return true;
             TilePosPrimeBank t = (TilePosPrimeBank) te;
-            if (t.companyId == null) {
-                ItemStack heldSrv = playerIn.getHeldItem(hand);
-                boolean holdingCard = heldSrv != null && heldSrv.getItem() instanceof ItemCard;
-                if (!holdingCard) {
-                    String companyId = CompanyAccounts.ensureDefault(playerIn.getUniqueID());
-                    // English: Ensure a company record exists in the registry for approvals/market.
-                    // Español: Asegurar que exista un registro de empresa en el registro para aprobaciones/mercado.
-                    com.primebank.core.state.PrimeBankState.get().companies().ensureDefault(playerIn.getUniqueID());
-                    t.companyId = companyId;
-                    t.markDirty();
-                    // English: Show friendly label: display name > owner's username > raw id.
-                    // Español: Mostrar etiqueta amigable: nombre visible > usuario del dueño > id crudo.
-                    String label = com.primebank.core.state.PrimeBankState.get().getCompanyName(companyId);
-                    if (label == null || label.isEmpty()) {
-                        if (companyId.startsWith("c:")) {
-                            try {
-                                String raw = companyId.substring(2);
-                                java.util.UUID owner = java.util.UUID.fromString(raw);
-                                net.minecraft.entity.player.EntityPlayerMP online = worldIn.getMinecraftServer().getPlayerList().getPlayerByUUID(owner);
-                                if (online != null) label = online.getName();
-                                else {
-                                    com.mojang.authlib.GameProfile gp = worldIn.getMinecraftServer().getPlayerProfileCache().getProfileByUUID(owner);
-                                    if (gp != null && gp.getName() != null) label = gp.getName();
-                                }
-                            } catch (Exception ignored) {}
-                        }
-                        if (label == null || label.isEmpty()) label = companyId;
-                    }
-                    playerIn.sendMessage(new TextComponentTranslation("primebank.pos.linked", label));
-                    return true;
-                }
-            } else if (playerIn.isSneaking()) {
+            if (t.companyId != null && playerIn.isSneaking()) {
                 // English: If already linked, inform the player.
                 // Español: Si ya está enlazado, informar al jugador.
                 // English: Show friendly label for the already linked company.

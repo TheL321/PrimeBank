@@ -35,9 +35,13 @@ public class PacketMarketDetailsRequest implements IMessage {
             IThreadListener thread = ctx.getServerHandler().player.getServerWorld();
             thread.addScheduledTask(() -> {
                 EntityPlayerMP p = ctx.getServerHandler().player;
-                String cid = message.companyId;
-                com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies().get(cid);
                 com.primebank.core.state.PrimeBankState state = com.primebank.core.state.PrimeBankState.get();
+                // English: Allow clients to send ticker or id; resolve to the canonical company id.
+                // Español: Permitir que el cliente envíe ticker o id; resolver al id canónico de la empresa.
+                String cidIn = message.companyId;
+                String cid = state.resolveCompanyIdentifier(cidIn);
+                if (cid == null) cid = cidIn;
+                com.primebank.core.company.Company c = state.companies().get(cid);
                 String displayName = state.getCompanyName(cid);
                 String shortName = state.getCompanyShortName(cid);
                 if (displayName == null || displayName.isEmpty()) displayName = cid;

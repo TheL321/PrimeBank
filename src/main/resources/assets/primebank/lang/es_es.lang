@@ -2,6 +2,8 @@ mod.primebank.name=BancoPrime
 mod.primebank.description=Banca, mercado, POS y préstamos para servidores de Minecraft.
 ui.primebank.ok=Aceptar
 ui.primebank.cancel=Cancelar
+ui.primebank.prev=Ant
+ui.primebank.next=Sig
 
 # Pestaña Creativa
 itemGroup.primebank=BancoPrime
@@ -58,17 +60,22 @@ primebank.pos.result.accepted=Cobro POS aceptado
 primebank.pos.result.cancelled=Cobro POS cancelado
 primebank.pos.prompt.merchant=Comerciante: %s
 primebank.pos.result.accepted.details=Pago completado. Al comerciante: %s, Comisión al Central: %s
+primebank.pos.notify.merchant.received=Venta por POS recibida: %s de %s
 primebank.pos.pending.set=Cobro pendiente establecido: %s
 primebank.pos.pending.cleared=Cobro pendiente limpiado
 primebank.pos.pending.bad_amount=Monto inválido
 primebank.pos.error.not_linked=POS no enlazado a una empresa
 primebank.pos.error.no_pending=No hay un cobro pendiente establecido
+primebank.pos.error.no_companies=No posees ninguna empresa
+primebank.pos.error.company_not_found=Empresa no encontrada
 primebank.pos.linked=POS enlazado a la empresa %s
 primebank.pos.linked.already=POS ya está enlazado a la empresa %s
 
 # Configuración por POS
 primebank.pos.config.title=Configurar Precio del POS
 primebank.pos.config.hint=Escribe un monto como 10 o 10.50 y presiona Aceptar
+primebank.pos.select_company.title=Selecciona Empresa para el POS
+primebank.pos.select_company.hint=Elige a qué empresa pertenece este POS
 primebank.pos.price.set=Precio del POS establecido: %s
 primebank.pos.price.bad_amount=Monto de precio inválido
 primebank.pos.price.not_owner=Solo el dueño de la empresa puede configurar este POS
@@ -81,6 +88,8 @@ ui.primebank.charge=Cobrar
 # GUI del terminal del comerciante
 primebank.pos.terminal.title=Ingresar Monto a Cobrar
 primebank.pos.terminal.hint=Escribe un monto como 10 o 10.50 y presiona Cobrar
+primebank.terminal.select_company.title=Selecciona Empresa para Cobros del Terminal
+primebank.terminal.select_company.hint=Esto establece el precio POS por defecto para la empresa elegida
 
 # Terminal
 primebank.terminal.balance=Terminal PrimeBank — Saldo: %s
@@ -116,19 +125,27 @@ primebank.pos.error.company_not_approved=Empresa aún no aprobada
 # Solicitud de empresa
 primebank.company.apply.title=Solicitud de Empresa
 primebank.company.apply.hint=Ingresa un nombre y una descripción opcional
+primebank.company.apply.name_label=Nombre
+primebank.company.apply.name_hint=Ingresa el nombre de la empresa
+primebank.company.apply.desc_label=Descripción
+primebank.company.apply.desc_hint=Descripción opcional
+primebank.company.apply.short_label=Ticker (2-8 A–Z/0–9)
+primebank.company.apply.short_hint=Ingresa un código corto en mayúsculas como ABC o ABC1
+primebank.company.apply.bad_short=Ingresa un ticker alfanumérico de 2–8 caracteres
 primebank.company.apply.bad_name=Por favor ingresa un nombre de empresa
 primebank.company.apply.submitted=Solicitud enviada para aprobación
 
 # Admin
 primebank.admin.not_admin=No eres administrador
 primebank.admin.company.approved=Empresa aprobada: %s
+primebank.admin.company.not_found=Empresa no encontrada
 primebank.admin.cashback.set=Cashback global establecido a %s bps
 
 # Mercado (primario)
 primebank.market.home.title=Mercado (Primario)
 primebank.market.home.my_company=Detalles de Mi Empresa
 primebank.market.home.open_id=Abrir por ID
-primebank.market.home.company_id_hint=Ingresa ID de empresa como c:<uuid>
+primebank.market.home.company_id_hint=Ingresa ID de empresa o ticker (ej., TICKER o c:<uuid>)
 primebank.market.list.ok=Listadas %s acciones para %s
 primebank.market.list.error.bad_args=Argumentos inválidos
 primebank.market.list.error.company_not_found=Empresa no encontrada

@@ -7,6 +7,7 @@ import com.primebank.PrimeBankMod;
 import com.primebank.core.accounts.Account;
 import com.primebank.core.accounts.AccountRegistry;
 import com.primebank.core.accounts.AccountType;
+import com.primebank.core.company.Company;
 
 /*
  English: Global in-memory state. Holds registries and ensures special accounts exist.
@@ -21,6 +22,7 @@ public final class PrimeBankState {
     private final java.util.concurrent.ConcurrentHashMap<String, Long> posPending = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<String, String> companyNames = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<String, String> companyShortNames = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<String, String> companyShortToId = new java.util.concurrent.ConcurrentHashMap<>();
     private final com.primebank.core.company.CompanyRegistry companies = new com.primebank.core.company.CompanyRegistry();
     private volatile int globalCashbackBps = 0;
 
@@ -106,19 +108,43 @@ public final class PrimeBankState {
      English: Set/get company short tickers, and snapshot/loader counterparts.
      Español: Establecer/obtener tickers cortos de empresa y sus contrapartes para snapshots.
     */
-    public void setCompanyShortName(String companyId, String shortName) {
+    public synchronized void setCompanyShortName(String companyId, String shortName) {
         if (companyId == null) return;
+        String previous = companyShortNames.remove(companyId);
+        if (previous != null) {
+            String owner = companyShortToId.get(previous);
+            if (owner != null && owner.equals(companyId)) {
+                companyShortToId.remove(previous);
+            }
+            Company self = companies().get(companyId);
+            if (self != null && previous.equalsIgnoreCase(self.shortName == null ? "" : self.shortName)) {
+                self.shortName = null;
+            }
+        }
         if (shortName == null) {
-            companyShortNames.remove(companyId);
             return;
         }
         String sanitized = shortName.trim();
+        // English: Keep ticker to a single alphanumeric word and uppercase it.
+        // Español: Mantener el ticker como una sola palabra alfanumérica y en mayúsculas.
+        sanitized = sanitized.replaceAll("[^A-Za-z0-9]", "");
         if (sanitized.isEmpty()) {
-            companyShortNames.remove(companyId);
             return;
         }
         sanitized = sanitized.toUpperCase(Locale.ROOT);
+        String other = companyShortToId.put(sanitized, companyId);
+        if (other != null && !other.equals(companyId)) {
+            companyShortNames.remove(other);
+            Company conflict = companies().get(other);
+            if (conflict != null) {
+                conflict.shortName = null;
+            }
+        }
         companyShortNames.put(companyId, sanitized);
+        Company self = companies().get(companyId);
+        if (self != null) {
+            self.shortName = sanitized;
+        }
     }
     public String getCompanyShortName(String companyId) {
         return companyId == null ? null : companyShortNames.get(companyId);
@@ -128,6 +154,7 @@ public final class PrimeBankState {
     }
     public void loadCompanyShortNames(java.util.Map<String, String> names) {
         companyShortNames.clear();
+        companyShortToId.clear();
         if (names != null) {
             for (java.util.Map.Entry<String, String> entry : names.entrySet()) {
                 setCompanyShortName(entry.getKey(), entry.getValue());
@@ -145,6 +172,7 @@ public final class PrimeBankState {
         posPending.clear();
         companyNames.clear();
         companyShortNames.clear();
+        companyShortToId.clear();
         companies.clear();
         globalCashbackBps = 0;
     }
@@ -155,5 +183,38 @@ public final class PrimeBankState {
             accounts.create(CENTRAL_ACCOUNT_ID, AccountType.CENTRAL, (UUID) null, 0L);
         }
         return accounts.get(CENTRAL_ACCOUNT_ID);
+    }
+
+    public String findCompanyIdByTicker(String shortName) {
+        if (shortName == null) return null;
+        String key = shortName.trim().toUpperCase(Locale.ROOT);
+        if (key.isEmpty()) return null;
+        return companyShortToId.get(key);
+    }
+
+    public String resolveCompanyIdentifier(String identifier) {
+        if (identifier == null) return null;
+        String trimmed = identifier.trim();
+        if (trimmed.isEmpty()) return null;
+        if (companies.get(trimmed) != null) return trimmed;
+        String resolved = findCompanyIdByTicker(trimmed);
+        if (resolved != null) return resolved;
+        return null;
+    }
+
+    public String getCompanyDisplay(String companyId) {
+        // English: Prefer display name (optionally annotated with ticker), else ticker, else raw id.
+        // Español: Preferir nombre visible (opcionalmente anotado con ticker), sino ticker, sino id crudo.
+        if (companyId == null || companyId.isEmpty()) return companyId;
+        String name = getCompanyName(companyId);
+        String ticker = getCompanyShortName(companyId);
+        if (name != null && !name.trim().isEmpty()) {
+            if (ticker != null && !ticker.trim().isEmpty()) {
+                return String.format("%s (%s)", name.trim(), ticker.trim());
+            }
+            return name.trim();
+        }
+        if (ticker != null && !ticker.trim().isEmpty()) return ticker.trim();
+        return companyId;
     }
 }

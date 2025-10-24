@@ -91,6 +91,12 @@ public class PacketPosChargeInitiate implements IMessage {
                     }
                     if (disp == null || disp.isEmpty()) disp = companyId;
                 }
+                // English: Append ticker to the merchant label when available (e.g., "Name (TICKER)").
+                // Español: Añadir el ticker a la etiqueta del comerciante cuando esté disponible (ej.: "Nombre (TICKER)").
+                String ticker = com.primebank.core.state.PrimeBankState.get().getCompanyShortName(companyId);
+                if (ticker != null && !ticker.trim().isEmpty()) {
+                    disp = String.format("%s (%s)", disp, ticker.trim());
+                }
                 com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketPosPrompt(cents, companyId, disp), p);
             });
             return null;

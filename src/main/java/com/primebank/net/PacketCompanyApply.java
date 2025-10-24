@@ -50,7 +50,21 @@ public class PacketCompanyApply implements IMessage {
                 EntityPlayerMP p = ctx.getServerHandler().player;
                 java.util.UUID owner = p.getUniqueID();
                 com.primebank.core.company.CompanyRegistry reg = PrimeBankState.get().companies();
-                Company c = reg.ensureDefault(owner);
+                // English: Use the default company for the first application; create a new unique ID for subsequent applications.
+                // Español: Usar la empresa por defecto para la primera solicitud; crear un ID único para solicitudes posteriores.
+                String defaultId = com.primebank.core.accounts.CompanyAccounts.defaultCompanyId(owner);
+                Company existingDefault = reg.get(defaultId);
+                boolean defaultIsEmpty = (existingDefault == null)
+                    || ((existingDefault.name == null || existingDefault.name.trim().isEmpty())
+                        && (existingDefault.shortName == null || existingDefault.shortName.trim().isEmpty())
+                        && (existingDefault.description == null || existingDefault.description.trim().isEmpty())
+                        && !existingDefault.approved);
+                Company c = defaultIsEmpty ? reg.ensureDefault(owner) : reg.createNew(owner);
+                // English: Ensure an account exists for this company id (needed for ledger/markets).
+                // Español: Asegurar que exista una cuenta para este id de empresa (necesario para ledger/mercados).
+                if (!PrimeBankState.get().accounts().exists(c.id)) {
+                    PrimeBankState.get().accounts().create(c.id, com.primebank.core.accounts.AccountType.COMPANY, owner, 0L);
+                }
                 c.name = message.name == null ? null : message.name.trim();
                 c.description = message.desc == null ? null : message.desc.trim();
                 c.shortName = message.shortName == null ? null : message.shortName.trim();

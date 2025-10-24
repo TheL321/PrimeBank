@@ -26,6 +26,14 @@ public final class Net {
         PrimeBankMod.NETWORK.registerMessage(PacketPosOpenConfigRequest.Handler.class, PacketPosOpenConfigRequest.class, ID++, Side.SERVER);
         PrimeBankMod.NETWORK.registerMessage(PacketOpenPosConfig.Handler.class, PacketOpenPosConfig.class, ID++, Side.CLIENT);
         PrimeBankMod.NETWORK.registerMessage(PacketPosSetPrice.Handler.class, PacketPosSetPrice.class, ID++, Side.SERVER);
+        // English: POS company selection flow.
+        // Español: Flujo de selección de empresa para POS.
+        PrimeBankMod.NETWORK.registerMessage(PacketOpenPosSelectCompany.Handler.class, PacketOpenPosSelectCompany.class, ID++, Side.CLIENT);
+        PrimeBankMod.NETWORK.registerMessage(PacketPosSetCompany.Handler.class, PacketPosSetCompany.class, ID++, Side.SERVER);
+        // English: Terminal company selection before setting global POS price via terminal.
+        // Español: Selección de empresa en el terminal antes de fijar precio POS global desde el terminal.
+        PrimeBankMod.NETWORK.registerMessage(PacketTerminalOpenChargeRequest.Handler.class, PacketTerminalOpenChargeRequest.class, ID++, Side.SERVER);
+        PrimeBankMod.NETWORK.registerMessage(PacketOpenTerminalSelectCompany.Handler.class, PacketOpenTerminalSelectCompany.class, ID++, Side.CLIENT);
         // English: Company application packet (C2S).
         // Español: Paquete de solicitud de empresa (C2S).
         PrimeBankMod.NETWORK.registerMessage(PacketCompanyApply.Handler.class, PacketCompanyApply.class, ID++, Side.SERVER);

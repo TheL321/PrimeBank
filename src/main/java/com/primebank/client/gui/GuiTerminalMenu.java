@@ -5,6 +5,9 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 
+import com.primebank.PrimeBankMod;
+import com.primebank.net.PacketTerminalOpenChargeRequest;
+
 /*
  English: Minimal terminal menu to access Merchant Charge, Company Apply, and Market.
  Español: Menú mínimo del terminal para acceder a Cobro Comerciante, Solicitar Empresa y Mercado.
@@ -30,7 +33,9 @@ public class GuiTerminalMenu extends GuiScreen {
     @Override
     protected void actionPerformed(GuiButton button) {
         if (button == btnCharge) {
-            Minecraft.getMinecraft().displayGuiScreen(new GuiTerminalCharge());
+            // English: Ask server to open company selection for terminal pricing.
+            // Español: Pedir al servidor que abra la selección de empresa para el terminal.
+            PrimeBankMod.NETWORK.sendToServer(new PacketTerminalOpenChargeRequest());
         } else if (button == btnApply) {
             Minecraft.getMinecraft().displayGuiScreen(new GuiCompanyApply());
         } else if (button == btnMarket) {

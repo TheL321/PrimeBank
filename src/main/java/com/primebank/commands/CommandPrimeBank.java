@@ -43,7 +43,14 @@ public class CommandPrimeBank extends CommandBase {
     private String companyLabel(MinecraftServer server, String companyId) {
         String disp = PrimeBankState.get().getCompanyName(companyId);
         String ticker = PrimeBankState.get().getCompanyShortName(companyId);
-        if (disp != null && !disp.isEmpty()) return disp;
+        // English: If a display name exists, annotate with ticker when available.
+        // Español: Si existe nombre visible, anotarlo con ticker cuando esté disponible.
+        if (disp != null && !disp.isEmpty()) {
+            if (ticker != null && !ticker.trim().isEmpty()) {
+                return String.format("%s (%s)", disp, ticker.trim());
+            }
+            return disp;
+        }
         if (companyId != null && companyId.startsWith("c:")) {
             try {
                 String raw = companyId.substring(2);
@@ -63,7 +70,9 @@ public class CommandPrimeBank extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <player|uuid>|setcashbackbps <bps>|marketlist <shares> [companyId]|marketbuy <companyId> <shares>|reload>";
+        // English: Update usage to advertise ticker support; adminapprove now takes companyId|TICKER.
+        // Español: Actualizar uso para anunciar soporte de ticker; adminapprove ahora recibe companyId|TICKER.
+        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <companyId|TICKER>|setcashbackbps <bps>|marketlist <shares> <companyId|TICKER>|marketbuy <companyId|TICKER> <shares>|reload>";
     }
 
     @Override
@@ -217,24 +226,29 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "adminapprove": {
-                // English: Admin-only: approve a company's default id for given player/uuid and grant 101 shares to owner.
-                // Español: Solo admin: aprobar la empresa por defecto del jugador/uuid y otorgar 101 acciones al dueño.
+                // English: Admin-only: approve a company by ID or TICKER and grant majority shares to its owner.
+                // Español: Solo admin: aprobar una empresa por ID o TICKER y otorgar acciones mayoritarias a su dueño.
                 if (!com.primebank.core.admin.AdminService.isAdmin(me, server, sender)) {
                     sender.sendMessage(new TextComponentTranslation("primebank.admin.not_admin"));
                     break;
                 }
                 if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
-                UUID who;
-                try { who = java.util.UUID.fromString(args[1]); }
-                catch (IllegalArgumentException ex) { who = resolveUsernameToUuid(server, args[1]); }
-                String cid = CompanyAccounts.ensureDefault(who);
-                com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies().ensureDefault(who);
+                String ident = args[1];
+                // English: Accept either canonical id or ticker; resolve to company id.
+                // Español: Aceptar id canónico o ticker; resolver al id de la empresa.
+                String cid = com.primebank.core.state.PrimeBankState.get().resolveCompanyIdentifier(ident);
+                if (cid == null) cid = ident;
+                com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies().get(cid);
+                if (c == null) { sender.sendMessage(new TextComponentTranslation("primebank.admin.company.not_found")); break; }
                 c.approved = true;
                 c.approvedAt = System.currentTimeMillis();
-                c.ownerUuid = who;
-                c.holdings.put(who.toString(), 101);
+                if (c.ownerUuid != null) {
+                    String ownerKey = c.ownerUuid.toString();
+                    int cur = c.holdings.getOrDefault(ownerKey, 0);
+                    if (cur < 101) c.holdings.put(ownerKey, 101);
+                }
                 com.primebank.persistence.CompanyPersistence.saveCompany(c);
-                sender.sendMessage(new TextComponentTranslation("primebank.admin.company.approved", cid));
+                sender.sendMessage(new TextComponentTranslation("primebank.admin.company.approved", companyLabel(server, cid)));
                 break;
             }
             case "setcashbackbps": {
@@ -256,12 +270,15 @@ public class CommandPrimeBank extends CommandBase {
             case "marketlist": {
                 // English: Owner lists shares for sale on primary market.
                 // Español: El dueño lista acciones para la venta en mercado primario.
-                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
+                if (args.length < 3) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
                 int shares;
                 try { shares = Integer.parseInt(args[1]); } catch (NumberFormatException e) { sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[1])); break; }
                 if (shares <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); break; }
                 java.util.UUID owner = me;
-                String companyId = args.length >= 3 ? args[2] : com.primebank.core.accounts.CompanyAccounts.ensureDefault(owner);
+                // English: Accept ticker or id for the company argument; now mandatory.
+                // Español: Aceptar ticker o id para el argumento de empresa; ahora obligatorio.
+                String resolved = com.primebank.core.state.PrimeBankState.get().resolveCompanyIdentifier(args[2]);
+                String companyId = resolved != null ? resolved : args[2];
                 com.primebank.market.MarketPrimaryService.Result r = com.primebank.market.MarketPrimaryService.get().listShares(owner, companyId, shares);
                 if (r.ok) {
                     sender.sendMessage(new TextComponentTranslation("primebank.market.list.ok", shares, companyLabel(server, companyId)));
@@ -274,7 +291,11 @@ public class CommandPrimeBank extends CommandBase {
                 // English: Buyer purchases shares from company's listed inventory.
                 // Español: Comprador adquiere acciones del inventario listado de la empresa.
                 if (args.length < 3) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
-                String companyId = args[1];
+                String companyIdIn = args[1];
+                // English: Accept ticker or id for target company.
+                // Español: Aceptar ticker o id para la empresa objetivo.
+                String companyId = com.primebank.core.state.PrimeBankState.get().resolveCompanyIdentifier(companyIdIn);
+                if (companyId == null) companyId = companyIdIn;
                 int shares;
                 try { shares = Integer.parseInt(args[2]); } catch (NumberFormatException e) { sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[2])); break; }
                 if (shares <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); break; }

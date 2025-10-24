@@ -39,7 +39,12 @@ public class PacketMarketBuy implements IMessage {
             thread.addScheduledTask(() -> {
                 EntityPlayerMP p = ctx.getServerHandler().player;
                 java.util.UUID buyer = p.getUniqueID();
-                String cid = message.companyId;
+                // English: Accept ticker or canonical id from client; resolve to id.
+                // Español: Aceptar ticker o id canónico del cliente; resolver a id.
+                com.primebank.core.state.PrimeBankState state = com.primebank.core.state.PrimeBankState.get();
+                String cidIn = message.companyId;
+                String cid = state.resolveCompanyIdentifier(cidIn);
+                if (cid == null) cid = cidIn;
                 int shares = message.shares;
                 if (shares <= 0) {
                     p.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
@@ -47,19 +52,19 @@ public class PacketMarketBuy implements IMessage {
                 }
                 // English: Precompute price for feedback.
                 // Español: Precalcular precio para retroalimentación.
-                com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies().get(cid);
+                com.primebank.core.company.Company c = state.companies().get(cid);
                 long pps = (c == null) ? 0L : (c.valuationCurrentCents / 101L);
                 long gross = pps * shares;
                 com.primebank.market.MarketPrimaryService.Result r = com.primebank.market.MarketPrimaryService.get().buyShares(buyer, cid, shares);
                 if (r.ok) {
-                    p.sendMessage(new TextComponentTranslation("primebank.market.buy.ok", shares, cid, com.primebank.core.Money.formatUsd(pps), com.primebank.core.Money.formatUsd(gross)));
+                    String label = state.getCompanyDisplay(cid);
+                    p.sendMessage(new TextComponentTranslation("primebank.market.buy.ok", shares, label, com.primebank.core.Money.formatUsd(pps), com.primebank.core.Money.formatUsd(gross)));
                     // English: Send updated details back to refresh the GUI.
                     // Español: Enviar detalles actualizados para refrescar la GUI.
-                    com.primebank.core.state.PrimeBankState state = com.primebank.core.state.PrimeBankState.get();
                     String displayName = state.getCompanyName(cid);
                     String shortName = state.getCompanyShortName(cid);
                     if (displayName == null || displayName.isEmpty()) displayName = cid;
-                    c = com.primebank.core.state.PrimeBankState.get().companies().get(cid);
+                    c = state.companies().get(cid);
                     long valuationCurrent = c == null ? 0L : c.valuationCurrentCents;
                     long[] valuationHistory = new long[0];
                     if (c != null && c.valuationHistoryCents != null && !c.valuationHistoryCents.isEmpty()) {
