@@ -69,9 +69,10 @@ public class PrimeBankMod {
          English: Initialization phase. Reserved for registries, GUIs, and packet registration in later phases.
          Español: Fase de inicialización. Reservado para registros, interfaces y paquetes en fases posteriores.
         */
-        // English: Register network packets (Phase 2 skeleton).
-        // Español: Registrar paquetes de red (esqueleto de Fase 2).
-        Net.register();
+        // English: Register network packets in a side-safe way.
+        // Español: Registrar paquetes de red respetando los lados.
+        Net.registerForServer();
+        PROXY.registerClientPackets();
     }
 
     @EventHandler

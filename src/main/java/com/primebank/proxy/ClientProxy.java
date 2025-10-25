@@ -6,6 +6,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import com.primebank.client.gui.GuiTerminalMenu;
+import com.primebank.net.Net;
 
 /*
  English: Client-side proxy. Handles GUI opening and other client-only logic.
@@ -21,5 +22,14 @@ public class ClientProxy extends CommonProxy {
          Español: Abrir la GUI del menú del terminal en el cliente.
         */
         Minecraft.getMinecraft().displayGuiScreen(new GuiTerminalMenu());
+    }
+
+    @Override
+    public void registerClientPackets() {
+        /*
+         English: Register client-only packet handlers (S2C) on the client side.
+         Español: Registrar manejadores de paquetes solo de cliente (S2C) en el lado del cliente.
+        */
+        Net.registerForClient();
     }
 }
