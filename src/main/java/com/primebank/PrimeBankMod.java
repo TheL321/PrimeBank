@@ -2,6 +2,7 @@ package com.primebank;
 
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
@@ -16,6 +17,7 @@ import com.primebank.core.state.PrimeBankState;
 import com.primebank.commands.CommandPrimeBank;
 import com.primebank.persistence.BankPersistence;
 import com.primebank.persistence.PersistencePaths;
+import com.primebank.proxy.CommonProxy;
 import java.io.File;
 import com.primebank.net.Net;
 import net.minecraftforge.fml.common.registry.GameRegistry;
@@ -34,6 +36,13 @@ public class PrimeBankMod {
 
     public static SimpleNetworkWrapper NETWORK;
     public static Logger LOGGER = LogManager.getLogger(NAME);
+    
+    /*
+     English: Proxy to handle client/server-specific logic (e.g., GUI opening).
+     Español: Proxy para manejar lógica específica de cliente/servidor (ej., apertura de GUI).
+    */
+    @SidedProxy(clientSide = "com.primebank.proxy.ClientProxy", serverSide = "com.primebank.proxy.CommonProxy")
+    public static CommonProxy PROXY;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {

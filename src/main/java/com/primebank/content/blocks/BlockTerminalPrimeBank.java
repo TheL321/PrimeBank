@@ -18,8 +18,6 @@ import com.primebank.core.state.PrimeBankState;
 import com.primebank.core.ledger.Ledger;
 import com.primebank.content.items.CashUtil;
 import com.primebank.PrimeBankMod;
-import net.minecraft.client.Minecraft;
-import com.primebank.client.gui.GuiTerminalCharge;
 
 /*
  English: PrimeBank Terminal block placeholder. Shows balance on use.
@@ -60,7 +58,7 @@ public class BlockTerminalPrimeBank extends Block {
             // English: Client-side: open terminal menu when not sneaking.
             // Español: Lado cliente: abrir menú del terminal cuando no está agachado.
             if (!playerIn.isSneaking()) {
-                Minecraft.getMinecraft().displayGuiScreen(new com.primebank.client.gui.GuiTerminalMenu());
+                PrimeBankMod.PROXY.openTerminalGui(playerIn);
             }
         }
         return true;
