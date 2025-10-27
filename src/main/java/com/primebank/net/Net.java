@@ -37,6 +37,7 @@ public final class Net {
         PrimeBankMod.NETWORK.registerMessage(PacketCompanyApply.Handler.class, PacketCompanyApply.class, ID++, Side.SERVER);
         PrimeBankMod.NETWORK.registerMessage(PacketMarketDetailsRequest.Handler.class, PacketMarketDetailsRequest.class, ID++, Side.SERVER);
         PrimeBankMod.NETWORK.registerMessage(PacketMarketBuy.Handler.class, PacketMarketBuy.class, ID++, Side.SERVER);
+        PrimeBankMod.NETWORK.registerMessage(PacketMarketHomeRequest.Handler.class, PacketMarketHomeRequest.class, ID++, Side.SERVER);
 
         // English: Also register client-bound packets with a server-safe no-op handler so the server knows their discriminators when sending.
         // Español: También registrar paquetes dirigidos al cliente con un manejador no-op para que el servidor conozca sus discriminadores al enviarlos.
@@ -45,6 +46,7 @@ public final class Net {
         PrimeBankMod.NETWORK.registerMessage(new NoopClientHandler<PacketOpenPosSelectCompany>(), PacketOpenPosSelectCompany.class, ID++, Side.CLIENT);
         PrimeBankMod.NETWORK.registerMessage(new NoopClientHandler<PacketOpenTerminalSelectCompany>(), PacketOpenTerminalSelectCompany.class, ID++, Side.CLIENT);
         PrimeBankMod.NETWORK.registerMessage(new NoopClientHandler<PacketMarketDetails>(), PacketMarketDetails.class, ID++, Side.CLIENT);
+        PrimeBankMod.NETWORK.registerMessage(new NoopClientHandler<PacketMarketHomeList>(), PacketMarketHomeList.class, ID++, Side.CLIENT);
     }
 
     public static void registerForClient() {
@@ -55,6 +57,7 @@ public final class Net {
         PrimeBankMod.NETWORK.registerMessage(PacketOpenPosSelectCompany.Handler.class, PacketOpenPosSelectCompany.class, ID++, Side.CLIENT);
         PrimeBankMod.NETWORK.registerMessage(PacketOpenTerminalSelectCompany.Handler.class, PacketOpenTerminalSelectCompany.class, ID++, Side.CLIENT);
         PrimeBankMod.NETWORK.registerMessage(PacketMarketDetails.Handler.class, PacketMarketDetails.class, ID++, Side.CLIENT);
+        PrimeBankMod.NETWORK.registerMessage(PacketMarketHomeList.Handler.class, PacketMarketHomeList.class, ID++, Side.CLIENT);
     }
 }
 

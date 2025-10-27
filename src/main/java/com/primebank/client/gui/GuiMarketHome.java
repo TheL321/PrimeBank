@@ -14,6 +14,9 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.input.Mouse;
 
+import com.primebank.PrimeBankMod;
+import com.primebank.net.PacketMarketHomeRequest;
+
 /*
  English: Market home screen showing approved companies with valuation summaries.
  Español: Pantalla de inicio del mercado que muestra empresas aprobadas con resúmenes de valoración.
@@ -118,23 +121,32 @@ public class GuiMarketHome extends GuiScreen {
     public boolean doesGuiPauseGame() { return false; }
 
     /*
-     English: Refresh entries from PrimeBankState to show approved companies.
-     Español: Refrescar entradas desde PrimeBankState para mostrar empresas aprobadas.
+     English: Request company listings from server.
+     Español: Solicitar listados de empresas del servidor.
     */
     private void reloadEntries() {
-        com.primebank.core.state.PrimeBankState state = com.primebank.core.state.PrimeBankState.get();
-        Map<String, String> names = state.getAllCompanyNames();
-        Map<String, String> shortNames = state.getAllCompanyShortNames();
+        // English: Clear current entries and request fresh data from server.
+        // Español: Limpiar entradas actuales y solicitar datos actualizados del servidor.
+        this.entries = Collections.emptyList();
+        this.scrollOffset = 0f;
+        statusLine = I18n.format("primebank.market.home.loading");
+        PrimeBankMod.NETWORK.sendToServer(new PacketMarketHomeRequest());
+    }
+    
+    /*
+     English: Called when server sends company listings.
+     Español: Llamado cuando el servidor envía listados de empresas.
+    */
+    public void onListingsReceived(List<com.primebank.net.PacketMarketHomeList.CompanyListing> listings) {
         List<CompanyEntry> listEntries = new ArrayList<>();
-        for (com.primebank.core.company.Company company : com.primebank.core.state.PrimeBankState.get().companies().all()) {
-            if (company == null || !company.approved) continue;
-            String displayName = names.getOrDefault(company.id, company.id);
-            String ticker = shortNames.getOrDefault(company.id, "");
+        for (com.primebank.net.PacketMarketHomeList.CompanyListing listing : listings) {
+            String displayName = listing.displayName;
+            String ticker = listing.shortName;
             if (ticker != null && !ticker.trim().isEmpty()) {
                 // English: Append ticker in parentheses for clarity. Español: Añadir el ticker entre paréntesis para mayor claridad.
                 displayName = String.format("%s (%s)", displayName, ticker.trim());
             }
-            listEntries.add(new CompanyEntry(displayName, ticker, company));
+            listEntries.add(new CompanyEntry(listing.id, displayName, ticker, listing.valuationCents, listing.listedShares));
         }
         listEntries.sort(Comparator.comparing(e -> e.displayName.toLowerCase()));
         this.entries = listEntries;
@@ -155,14 +167,14 @@ public class GuiMarketHome extends GuiScreen {
         final boolean blocked;
         final String shortName;
 
-        CompanyEntry(String displayName, String shortName, com.primebank.core.company.Company company) {
+        CompanyEntry(String companyId, String displayName, String shortName, long valuationCents, int listedShares) {
+            this.companyId = companyId;
             this.displayName = displayName;
             this.shortName = shortName == null ? "" : shortName;
-            this.companyId = company.id;
-            this.valuation = company.valuationCurrentCents;
-            this.pricePerShare = company.valuationCurrentCents <= 0 ? 0 : (company.valuationCurrentCents / 101L);
-            this.listedShares = company.listedShares;
-            this.blocked = company.valuationCurrentCents <= 0;
+            this.valuation = valuationCents;
+            this.pricePerShare = valuationCents <= 0 ? 0 : (valuationCents / 101L);
+            this.listedShares = listedShares;
+            this.blocked = valuationCents <= 0;
         }
     }
 

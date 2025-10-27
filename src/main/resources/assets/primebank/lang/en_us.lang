@@ -157,6 +157,7 @@ primebank.market.buy.error.ledger_error=Payment failed
 primebank.market.buy.error.company_no_owner=Company has no owner set
 primebank.market.buy.error.majority_violation=Operation would violate majority rule
 primebank.market.home.refresh=Refresh list
+primebank.market.home.loading=Loading companies...
 primebank.market.home.no_companies=No approved companies yet
 primebank.market.home.total_companies=Companies listed: %s
 primebank.market.listing.valuation=Valuation: %s

@@ -163,6 +163,7 @@ primebank.market.buy.error.ledger_error=Pago fallido
 primebank.market.buy.error.company_no_owner=La empresa no tiene dueño establecido
 primebank.market.buy.error.majority_violation=La operación violaría la regla de mayoría
 primebank.market.home.refresh=Actualizar lista
+primebank.market.home.loading=Cargando empresas...
 primebank.market.home.no_companies=No hay empresas aprobadas aún
 primebank.market.home.total_companies=Empresas listadas: %s
 primebank.market.listing.valuation=Valoración: %s

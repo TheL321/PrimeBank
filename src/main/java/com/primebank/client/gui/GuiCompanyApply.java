@@ -29,16 +29,18 @@ public class GuiCompanyApply extends GuiScreen {
         int midX = this.width / 2;
         int midY = this.height / 2;
         this.buttonList.clear();
-        this.name = new GuiTextField(1, this.fontRenderer, midX - 100, midY - 30, 200, 20);
+        // English: Adjusted spacing to prevent text clipping between labels and text fields.
+        // Español: Espaciado ajustado para evitar que el texto se recorte entre etiquetas y campos de texto.
+        this.name = new GuiTextField(1, this.fontRenderer, midX - 100, midY - 20, 200, 20);
         this.name.setFocused(true);
         this.name.setMaxStringLength(64);
-        this.desc = new GuiTextField(2, this.fontRenderer, midX - 100, midY, 200, 20);
+        this.desc = new GuiTextField(2, this.fontRenderer, midX - 100, midY + 20, 200, 20);
         this.desc.setMaxStringLength(128);
-        this.shortName = new GuiTextField(3, this.fontRenderer, midX - 100, midY + 30, 200, 18);
+        this.shortName = new GuiTextField(3, this.fontRenderer, midX - 100, midY + 60, 200, 18);
         this.shortName.setMaxStringLength(12);
         this.shortName.setText("");
-        this.btnSubmit = new GuiButton(0, midX - 100, midY + 60, 90, 20, I18n.format("ui.primebank.ok"));
-        this.btnCancel = new GuiButton(1, midX + 10, midY + 60, 90, 20, I18n.format("ui.primebank.cancel"));
+        this.btnSubmit = new GuiButton(0, midX - 100, midY + 92, 90, 20, I18n.format("ui.primebank.ok"));
+        this.btnCancel = new GuiButton(1, midX + 10, midY + 92, 90, 20, I18n.format("ui.primebank.cancel"));
         this.buttonList.add(btnSubmit);
         this.buttonList.add(btnCancel);
     }
@@ -77,21 +79,21 @@ public class GuiCompanyApply extends GuiScreen {
         String hint = I18n.format("primebank.company.apply.hint");
         drawCenteredString(this.fontRenderer, title, this.width / 2, this.height / 2 - 60, 0xFFFFFF);
         drawCenteredString(this.fontRenderer, hint, this.width / 2, this.height / 2 - 48, 0xAAAAAA);
-        // English: Field labels and hints for Name, Description, and Ticker.
-        // Español: Etiquetas y pistas de los campos para Nombre, Descripción y Ticker.
+        // English: Field labels and hints for Name, Description, and Ticker with proper spacing.
+        // Español: Etiquetas y pistas de los campos para Nombre, Descripción y Ticker con espaciado adecuado.
         String nameLabel = I18n.format("primebank.company.apply.name_label");
-        drawCenteredString(this.fontRenderer, nameLabel, this.width / 2, this.height / 2 - 44, 0xFFFFFF);
+        drawCenteredString(this.fontRenderer, nameLabel, this.width / 2, this.height / 2 - 42, 0xFFFFFF);
         String nameHint = I18n.format("primebank.company.apply.name_hint");
-        drawCenteredString(this.fontRenderer, nameHint, this.width / 2, this.height / 2 - 34, 0xAAAAAA);
+        drawCenteredString(this.fontRenderer, nameHint, this.width / 2, this.height / 2 - 32, 0xAAAAAA);
 
         String descLabel = I18n.format("primebank.company.apply.desc_label");
-        drawCenteredString(this.fontRenderer, descLabel, this.width / 2, this.height / 2 - 12, 0xFFFFFF);
+        drawCenteredString(this.fontRenderer, descLabel, this.width / 2, this.height / 2 - 2, 0xFFFFFF);
         String descHint = I18n.format("primebank.company.apply.desc_hint");
-        drawCenteredString(this.fontRenderer, descHint, this.width / 2, this.height / 2 - 2, 0xAAAAAA);
+        drawCenteredString(this.fontRenderer, descHint, this.width / 2, this.height / 2 + 8, 0xAAAAAA);
         String shortLabel = I18n.format("primebank.company.apply.short_label");
-        drawCenteredString(this.fontRenderer, shortLabel, this.width / 2, this.height / 2 + 12, 0xFFFFFF);
+        drawCenteredString(this.fontRenderer, shortLabel, this.width / 2, this.height / 2 + 38, 0xFFFFFF);
         String shortHint = I18n.format("primebank.company.apply.short_hint");
-        drawCenteredString(this.fontRenderer, shortHint, this.width / 2, this.height / 2 + 22, 0xAAAAAA);
+        drawCenteredString(this.fontRenderer, shortHint, this.width / 2, this.height / 2 + 48, 0xAAAAAA);
         if (this.name != null) this.name.drawTextBox();
         if (this.desc != null) this.desc.drawTextBox();
         if (this.shortName != null) this.shortName.drawTextBox();

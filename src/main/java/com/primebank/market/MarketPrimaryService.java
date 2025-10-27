@@ -67,9 +67,11 @@ public final class MarketPrimaryService {
         if (pricePerShare <= 0) return Result.error("trading_blocked");
         long gross = pricePerShare * shares;
         String buyerAcc = com.primebank.core.accounts.PlayerAccounts.ensurePersonal(buyer);
-        String companyAcc = companyId; // company account id is companyId (e.g., c:<uuid>)
+        // English: Payment goes to the owner's personal account, not the company account.
+        // Español: El pago va a la cuenta personal del dueño, no a la cuenta de la empresa.
+        String sellerAcc = com.primebank.core.accounts.PlayerAccounts.ensurePersonal(c.ownerUuid);
         Ledger ledger = new Ledger(PrimeBankState.get().accounts());
-        Ledger.TransferResult tr = ledger.marketPrimaryBuy(buyerAcc, companyAcc, gross, BUYER_FEE_BPS, ISSUER_FEE_BPS);
+        Ledger.TransferResult tr = ledger.marketPrimaryBuy(buyerAcc, sellerAcc, gross, BUYER_FEE_BPS, ISSUER_FEE_BPS);
         if (!tr.success) {
             // English: Check result code for insufficient funds per Ledger.TransferResult.
             // Español: Verificar el código de resultado para fondos insuficientes según Ledger.TransferResult.
