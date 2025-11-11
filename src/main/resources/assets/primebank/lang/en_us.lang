@@ -32,6 +32,7 @@ primebank.usage=Usage: %s
 primebank.player_only=Players only
 primebank.balance=Balance: %s
 primebank.missing_cents=Missing cents argument
+primebank.missing_dollars=Missing dollars argument
 primebank.amount_le_zero=Amount must be > 0
 primebank.deposit.not_enough_currency=Not enough currency in inventory
 primebank.deposit.ok=Deposit completed: +%s

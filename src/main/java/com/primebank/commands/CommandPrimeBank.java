@@ -72,7 +72,7 @@ public class CommandPrimeBank extends CommandBase {
     public String getUsage(ICommandSender sender) {
         // English: Update usage to advertise ticker support; adminapprove now takes companyId|TICKER.
         // Español: Actualizar uso para anunciar soporte de ticker; adminapprove ahora recibe companyId|TICKER.
-        return "/primebank <balance|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <companyId|TICKER>|setcashbackbps <bps>|marketlist <shares> <companyId|TICKER>|marketbuy <companyId|TICKER> <shares>|reload>";
+        return "/primebank <balance|deposit <d>|withdraw <d>|transfer <player|uuid> <d>|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <companyId|TICKER>|setcashbackbps <bps>|marketlist <shares> <companyId|TICKER>|marketbuy <companyId|TICKER> <shares>|reload>";
     }
 
     @Override
@@ -156,6 +156,24 @@ public class CommandPrimeBank extends CommandBase {
                 sender.sendMessage(new TextComponentTranslation("primebank.company.balance", label, Money.formatUsd(bal)));
                 break;
             }
+            case "deposit": {
+                // English: Handle deposits specified in whole dollars by converting to cents.
+                // Español: Manejar depósitos especificados en dólares completos convirtiéndolos a centavos.
+                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_dollars")); return; }
+                long dollars = parseLongArg(args[1]);
+                if (dollars <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); return; }
+                long cents = dollarsToCents(dollars);
+                boolean spent = CashUtil.spendCurrency(player, cents);
+                if (!spent) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.deposit.not_enough_currency"));
+                } else {
+                    Ledger.OpResult r = ledger.deposit(myAcc, cents);
+                    String key = r.success ? "primebank.deposit.ok" : ("primebank.deposit.error." + r.code);
+                    sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
+                    BankPersistence.saveAllAsync();
+                }
+                break;
+            }
             case "depositcents": {
                 if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_cents")); return; }
                 long cents = parseLongArg(args[1]);
@@ -169,6 +187,26 @@ public class CommandPrimeBank extends CommandBase {
                     sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
                     BankPersistence.saveAllAsync();
                 }
+                break;
+            }
+            case "withdraw": {
+                // English: Handle withdrawals in whole dollars, returning currency items worth the amount.
+                // Español: Manejar retiros en dólares completos, devolviendo ítems de moneda por el monto.
+                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_dollars")); return; }
+                long dollars = parseLongArg(args[1]);
+                if (dollars <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); return; }
+                long cents = dollarsToCents(dollars);
+                Ledger.OpResult r = ledger.withdraw(myAcc, cents);
+                String key = r.success ? "primebank.withdraw.ok" : ("primebank.withdraw.error." + r.code);
+                if (r.success) {
+                    sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
+                } else {
+                    sender.sendMessage(new TextComponentTranslation(key));
+                }
+                if (r.success) {
+                    CashUtil.giveCurrency(player, cents);
+                }
+                BankPersistence.saveAllAsync();
                 break;
             }
             case "withdrawcents": {
@@ -187,6 +225,30 @@ public class CommandPrimeBank extends CommandBase {
                     // English: Give the withdrawn amount back as currency items to the player's inventory.
                     // Español: Entregar el monto retirado como ítems de moneda al inventario del jugador.
                     CashUtil.giveCurrency(player, cents);
+                }
+                BankPersistence.saveAllAsync();
+                break;
+            }
+            case "transfer": {
+                // English: Transfer whole dollars between personal accounts, applying fees when configured.
+                // Español: Transferir dólares completos entre cuentas personales, aplicando comisiones cuando existan.
+                if (args.length < 3) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); return; }
+                UUID to;
+                try {
+                    to = UUID.fromString(args[1]);
+                } catch (IllegalArgumentException ex) {
+                    to = resolveUsernameToUuid(server, args[1]);
+                }
+                String toAcc = PlayerAccounts.ensurePersonal(to);
+                long dollars = parseLongArg(args[2]);
+                if (dollars <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); return; }
+                long cents = dollarsToCents(dollars);
+                Ledger.TransferResult tr = ledger.transfer(myAcc, toAcc, cents);
+                if (tr.success) {
+                    if (tr.feeApplied) sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok_fee", Money.formatUsd(tr.feeCents)));
+                    else sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok"));
+                } else {
+                    sender.sendMessage(new TextComponentTranslation("primebank.transfer.error." + tr.code));
                 }
                 BankPersistence.saveAllAsync();
                 break;
@@ -335,32 +397,37 @@ public class CommandPrimeBank extends CommandBase {
         // English: Suggest subcommands when typing the first argument.
         // Español: Sugerir subcomandos al escribir el primer argumento.
         if (args.length <= 1) {
-            String[] subs = new String[] { "balance", "depositcents", "withdrawcents", "transfercents", "mycompanybalance", "setcompanyname", "reload" };
+            String[] subs = new String[] { "balance", "deposit", "withdraw", "transfer", "depositcents", "withdrawcents", "transfercents", "mycompanybalance", "setcompanyname", "reload" };
             return CommandBase.getListOfStringsMatchingLastWord(args, subs);
         }
 
         String sub = args[0].toLowerCase();
         switch (sub) {
+            case "transfer":
             case "transfercents": {
                 if (args.length == 2) {
                     // English: Suggest online player usernames for the recipient.
                     // Español: Sugerir nombres de jugadores en línea para el destinatario.
                     return CommandBase.getListOfStringsMatchingLastWord(args, server.getPlayerList().getOnlinePlayerNames());
                 } else if (args.length == 3) {
-                    // English: Suggest common cent amounts.
-                    // Español: Sugerir montos comunes en centavos.
-                    String[] cents = new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" };
-                    return CommandBase.getListOfStringsMatchingLastWord(args, cents);
+                    // English: Suggest common dollar or cent amounts depending on subcommand.
+                    // Español: Sugerir montos comunes en dólares o centavos según el subcomando.
+                    String[] suggestions = sub.equals("transfercents") ? new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" }
+                            : new String[] { "1", "5", "10", "20", "50", "100" };
+                    return CommandBase.getListOfStringsMatchingLastWord(args, suggestions);
                 }
                 break;
             }
+            case "deposit":
+            case "withdraw":
             case "depositcents":
             case "withdrawcents": {
                 if (args.length == 2) {
-                    // English: Suggest common cent amounts for deposit/withdraw.
-                    // Español: Sugerir montos comunes en centavos para depositar/retirar.
-                    String[] cents = new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" };
-                    return CommandBase.getListOfStringsMatchingLastWord(args, cents);
+                    // English: Suggest common dollar or cent amounts for deposit/withdraw commands.
+                    // Español: Sugerir montos comunes en dólares o centavos para los comandos depositar/retirar.
+                    String[] suggestions = sub.endsWith("cents") ? new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" }
+                            : new String[] { "1", "5", "10", "20", "50", "100" };
+                    return CommandBase.getListOfStringsMatchingLastWord(args, suggestions);
                 }
                 break;
             }
@@ -415,5 +482,17 @@ public class CommandPrimeBank extends CommandBase {
 
         // 4) Not found
         throw new CommandException("primebank.error.player_not_found", username);
+    }
+
+    /*
+     English: Convert whole dollars to cents, guarding against overflow.
+     Español: Convertir dólares enteros a centavos, protegiendo contra overflow.
+    */
+    private long dollarsToCents(long dollars) throws CommandException {
+        try {
+            return Math.multiplyExact(dollars, 100L);
+        } catch (ArithmeticException ex) {
+            throw new CommandException("primebank.error.bad_number", Long.toString(dollars));
+        }
     }
 }

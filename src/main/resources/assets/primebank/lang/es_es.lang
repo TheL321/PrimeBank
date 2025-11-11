@@ -32,6 +32,7 @@ primebank.usage=Uso: %s
 primebank.player_only=Solo jugadores
 primebank.balance=Saldo: %s
 primebank.missing_cents=Falta el argumento de centavos
+primebank.missing_dollars=Falta el argumento de dólares
 primebank.amount_le_zero=El monto debe ser > 0
 primebank.deposit.not_enough_currency=No hay suficiente moneda en el inventario
 primebank.deposit.ok=Depósito completado: +%s
