@@ -23,7 +23,10 @@ public class Company {
     public long approvedAt;   // ms epoch when approved (Day 0)
 
     // Phase 3 fields
-    public long salesWeekCents;        // accumulator for current period sales
+    public long salesWeekCents;        // English: Accumulator for the active day; Español: Acumulador del día activo
+    // English: Rolling window of the last 7 daily sales totals (oldest first).
+    // Español: Ventana rodante de los últimos 7 totales diarios de ventas (del más antiguo al más reciente).
+    public List<Long> salesLast7DaysCents = new ArrayList<>();
     public long valuationCurrentCents; // V
     public long lastValuationAt;       // ms epoch for last valuation
     @SerializedName(value = "valuationHistoryCents", alternate = {"valuationHistory"})

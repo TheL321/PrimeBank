@@ -38,6 +38,18 @@ public final class CompanyPersistence {
                             c.valuationHistoryCents.remove(0);
                         }
                     }
+                    if (c.salesLast7DaysCents == null) {
+                        // English: Ensure rolling sales window is available to avoid NPEs.
+                        // Español: Asegurar que la ventana rodante de ventas esté disponible para evitar NPEs.
+                        c.salesLast7DaysCents = new java.util.ArrayList<>();
+                    } else if (c.salesLast7DaysCents.size() > 7) {
+                        // English: Trim rolling sales history to last 7 days for valuation.
+                        // Español: Recortar el historial rodante de ventas a los últimos 7 días para la valoración.
+                        int excessDays = c.salesLast7DaysCents.size() - 7;
+                        for (int i = 0; i < excessDays; i++) {
+                            c.salesLast7DaysCents.remove(0);
+                        }
+                    }
                     if (c.shortName != null) {
                         c.shortName = c.shortName.replaceAll("[^A-Za-z0-9]", "");
                         c.shortName = c.shortName.trim().toUpperCase(Locale.ROOT);
