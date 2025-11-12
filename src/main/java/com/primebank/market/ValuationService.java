@@ -13,17 +13,17 @@ import com.primebank.core.state.PrimeBankState;
 import com.primebank.persistence.CompanyPersistence;
 
 /*
- English: Weekly valuation engine using real-time windows.
+ English: Daily valuation engine using real-time windows.
   - Day 0 = company.approvedAt
-  - First valuation at end of real day 8
-  - Thereafter every 7 real days
-  - Formula: V1 = 6 * salesWeek1; Vn = (6 * salesWeekN + 2 * V(n-1)) / 3
+  - First valuation at end of real day 1 (24 hours)
+  - Thereafter every 1 real day (24 hours)
+  - Formula: V1 = 6 * salesDay1; Vn = (6 * salesDayN + 2 * V(n-1)) / 3
   - Price = floor(V / 101); trading disabled while V == 0
- Español: Motor de valoración semanal usando ventanas de tiempo real.
+ Español: Motor de valoración diaria usando ventanas de tiempo real.
   - Día 0 = company.approvedAt
-  - Primera valoración al final del día 8
-  - Después, cada 7 días
-  - Fórmula: V1 = 6 * ventasSemana1; Vn = (6 * ventasSemanaN + 2 * V(n-1)) / 3
+  - Primera valoración al final del día 1 (24 horas)
+  - Después, cada 1 día (24 horas)
+  - Fórmula: V1 = 6 * ventasDía1; Vn = (6 * ventasDíaN + 2 * V(n-1)) / 3
   - Precio = floor(V / 101); trading deshabilitado mientras V == 0
 */
 public final class ValuationService {
@@ -81,16 +81,16 @@ public final class ValuationService {
             if (c == null || !c.approved) continue;
             if (c.approvedAt <= 0) continue;
             long lastValuation = c.lastValuationAt;
-            long dueAt = (lastValuation > 0) ? lastValuation + 7 * DAY_MS : c.approvedAt + 8 * DAY_MS;
+            long dueAt = (lastValuation > 0) ? lastValuation + DAY_MS : c.approvedAt + DAY_MS;
             if (now < dueAt) continue;
 
             long previousValuation = c.valuationCurrentCents;
             long sales = c.salesWeekCents;
             boolean changed = false;
 
-            // English: Safeguard to prevent runaway catch-up loops (max 52 weeks = 1 year).
-            // Español: Protección para prevenir bucles catch-up descontrolados (máx 52 semanas = 1 año).
-            int maxCatchupWeeks = 52;
+            // English: Safeguard to prevent runaway catch-up loops (max 365 days = 1 year).
+            // Español: Protección para prevenir bucles catch-up descontrolados (máx 365 días = 1 año).
+            int maxCatchupWeeks = 365;
             int catchupCount = 0;
             
             while (now >= dueAt && catchupCount < maxCatchupWeeks) {
@@ -113,8 +113,8 @@ public final class ValuationService {
 
                 previousValuation = valuation;
                 lastValuation = dueAt;
-                dueAt = lastValuation + 7 * DAY_MS;
-                sales = 0L; // English: After first catch-up, remaining weeks assume no recorded sales. Español: Tras el primer catch-up, se asume cero ventas en semanas restantes.
+                dueAt = lastValuation + DAY_MS;
+                sales = 0L; // English: After first catch-up, remaining days assume no recorded sales. Español: Tras el primer catch-up, se asume cero ventas en días restantes.
                 changed = true;
             }
 
