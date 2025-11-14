@@ -63,6 +63,13 @@ public final class MarketPrimaryService {
         if (c == null) return Result.error("company_not_found");
         if (c.valuationCurrentCents <= 0) return Result.error("trading_blocked");
         if (c.listedShares < shares) return Result.error("not_enough_listed");
+        // English: If the buyer is also the owner, treat this as an "unlist" operation with no money movement.
+        // Español: Si el comprador también es el dueño, tratar esto como una operación de "deslistado" sin movimiento de dinero.
+        if (buyer.equals(c.ownerUuid)) {
+            c.listedShares -= shares;
+            CompanyPersistence.saveCompany(c);
+            return Result.ok();
+        }
         long pricePerShare = c.valuationCurrentCents / 101L;
         if (pricePerShare <= 0) return Result.error("trading_blocked");
         long gross = pricePerShare * shares;
