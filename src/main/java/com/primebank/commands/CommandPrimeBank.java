@@ -78,7 +78,11 @@ public class CommandPrimeBank extends CommandBase {
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         if (args.length == 0) {
-            sender.sendMessage(new TextComponentTranslation("primebank.usage", getUsage(sender)));
+            if (sender instanceof EntityPlayerMP) {
+                sendHelp(sender);
+            } else {
+                sender.sendMessage(new TextComponentTranslation("primebank.usage", getUsage(sender)));
+            }
             return;
         }
         String sub = args[0].toLowerCase();
@@ -482,6 +486,31 @@ public class CommandPrimeBank extends CommandBase {
 
         // 4) Not found
         throw new CommandException("primebank.error.player_not_found", username);
+    }
+
+    private void sendHelp(ICommandSender sender) {
+        sender.sendMessage(new TextComponentString("§6PrimeBank Commands:§r"));
+        sender.sendMessage(new TextComponentString("§e-- Basic --§r"));
+        sender.sendMessage(new TextComponentString(" /pb balance"));
+        sender.sendMessage(new TextComponentString(" /pb deposit <amount>"));
+        sender.sendMessage(new TextComponentString(" /pb withdraw <amount>"));
+        sender.sendMessage(new TextComponentString(" /pb transfer <player> <amount>"));
+        
+        sender.sendMessage(new TextComponentString("§e-- Company --§r"));
+        sender.sendMessage(new TextComponentString(" /pb mycompanybalance"));
+        sender.sendMessage(new TextComponentString(" /pb setcompanyname <name|clear>"));
+        sender.sendMessage(new TextComponentString(" /pb setcompanyticker <ticker|clear>"));
+        
+        sender.sendMessage(new TextComponentString("§e-- Market --§r"));
+        sender.sendMessage(new TextComponentString(" /pb marketlist <shares> <company>"));
+        sender.sendMessage(new TextComponentString(" /pb marketbuy <company> <shares>"));
+        
+        if (sender.canUseCommand(2, "gamemode")) {
+             sender.sendMessage(new TextComponentString("§c-- Admin --§r"));
+             sender.sendMessage(new TextComponentString(" /pb adminapprove <company>"));
+             sender.sendMessage(new TextComponentString(" /pb setcashbackbps <bps>"));
+             sender.sendMessage(new TextComponentString(" /pb reload"));
+        }
     }
 
     /*

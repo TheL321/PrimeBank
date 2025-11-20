@@ -75,6 +75,9 @@ public class GuiCompanyApply extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();
+        if (this.name != null) this.name.drawTextBox();
+        if (this.desc != null) this.desc.drawTextBox();
+        if (this.shortName != null) this.shortName.drawTextBox();
         String title = I18n.format("primebank.company.apply.title");
         String hint = I18n.format("primebank.company.apply.hint");
         drawCenteredString(this.fontRenderer, title, this.width / 2, this.height / 2 - 60, 0xFFFFFF);
@@ -94,9 +97,6 @@ public class GuiCompanyApply extends GuiScreen {
         drawCenteredString(this.fontRenderer, shortLabel, this.width / 2, this.height / 2 + 38, 0xFFFFFF);
         String shortHint = I18n.format("primebank.company.apply.short_hint");
         drawCenteredString(this.fontRenderer, shortHint, this.width / 2, this.height / 2 + 48, 0xAAAAAA);
-        if (this.name != null) this.name.drawTextBox();
-        if (this.desc != null) this.desc.drawTextBox();
-        if (this.shortName != null) this.shortName.drawTextBox();
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
