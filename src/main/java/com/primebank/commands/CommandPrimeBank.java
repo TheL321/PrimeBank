@@ -81,7 +81,7 @@ public class CommandPrimeBank extends CommandBase {
         // companyId|TICKER.
         // Español: Actualizar uso para anunciar soporte de ticker; adminapprove ahora
         // recibe companyId|TICKER.
-        return "/primebank <balance|deposit <d>|withdraw <d>|transfer <player|uuid> <d>|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <companyId|TICKER>|setcashbackbps <bps>|marketlist <shares> <companyId|TICKER>|marketbuy <companyId|TICKER> <shares>|reload>";
+        return "/primebank <balance|deposit <d>|withdraw <d>|transfer <player|uuid> <d>|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <companyId|TICKER>|setcashbackbps <bps>|marketlist <shares> <companyId|TICKER>|marketbuy <companyId|TICKER> <shares>|centralbalance|centralwithdraw <d>|reload>";
     }
 
     @Override
@@ -495,6 +495,58 @@ public class CommandPrimeBank extends CommandBase {
                 }
                 break;
             }
+            case "centralbalance": {
+                // English: Admin-only: check central bank balance.
+                // Español: Solo admin: consultar saldo del banco central.
+                if (!com.primebank.core.admin.AdminService.isAdmin(me, server, sender)) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.admin.not_admin"));
+                    break;
+                }
+                com.primebank.core.accounts.Account central = PrimeBankState.get().ensureCentralAccount();
+                long bal = central.getBalanceCents();
+                sender.sendMessage(
+                        new TextComponentTranslation("primebank.admin.central.balance", Money.formatUsd(bal)));
+                break;
+            }
+            case "centralwithdraw": {
+                // English: Admin-only: withdraw from central bank.
+                // Español: Solo admin: retirar del banco central.
+                if (!com.primebank.core.admin.AdminService.isAdmin(me, server, sender)) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.admin.not_admin"));
+                    break;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_dollars"));
+                    break;
+                }
+                long dollars = parseLongArg(args[1]);
+                if (dollars <= 0) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
+                    break;
+                }
+                long cents = dollarsToCents(dollars);
+                com.primebank.core.accounts.Account central = PrimeBankState.get().ensureCentralAccount();
+
+                // Lock central account for thread safety
+                java.util.concurrent.locks.ReentrantLock lock = com.primebank.core.locks.AccountLockManager
+                        .getLock(PrimeBankState.CENTRAL_ACCOUNT_ID);
+                lock.lock();
+                try {
+                    if (central.getBalanceCents() < cents) {
+                        sender.sendMessage(
+                                new TextComponentTranslation("primebank.admin.central.withdraw.error.insufficient"));
+                    } else {
+                        central.withdraw(cents);
+                        CashUtil.giveCurrency(player, cents);
+                        sender.sendMessage(new TextComponentTranslation("primebank.admin.central.withdraw.ok",
+                                Money.formatUsd(cents)));
+                        BankPersistence.saveAllAsync();
+                    }
+                } finally {
+                    lock.unlock();
+                }
+                break;
+            }
             default:
                 sender.sendMessage(new TextComponentTranslation("primebank.unknown_subcommand"));
         }
@@ -522,7 +574,8 @@ public class CommandPrimeBank extends CommandBase {
         // Español: Sugerir subcomandos al escribir el primer argumento.
         if (args.length <= 1) {
             String[] subs = new String[] { "balance", "deposit", "withdraw", "transfer", "depositcents",
-                    "withdrawcents", "transfercents", "mycompanybalance", "setcompanyname", "reload" };
+                    "withdrawcents", "transfercents", "mycompanybalance", "setcompanyname", "reload", "centralbalance",
+                    "centralwithdraw" };
             return CommandBase.getListOfStringsMatchingLastWord(args, subs);
         }
 
@@ -639,8 +692,11 @@ public class CommandPrimeBank extends CommandBase {
         if (sender.canUseCommand(2, "gamemode")) {
             sender.sendMessage(new TextComponentString("§c-- Admin --§r"));
             sender.sendMessage(new TextComponentString(" /pb adminapprove <company>"));
-            sender.sendMessage(new TextComponentString(" /pb setcashbackbps <bps>"));
-            sender.sendMessage(new TextComponentString(" /pb reload"));
+            sender.sendMessage(new TextComponentTranslation("primebank.admin.company.approved", "<company>"));
+            sender.sendMessage(new TextComponentTranslation("primebank.admin.cashback.set", "<bps>"));
+            sender.sendMessage(new TextComponentTranslation("primebank.admin.central.balance"));
+            sender.sendMessage(new TextComponentTranslation("primebank.admin.central.withdraw", "<amount>"));
+            sender.sendMessage(new TextComponentTranslation("primebank.reload.ok"));
         }
     }
 

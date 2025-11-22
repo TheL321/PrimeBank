@@ -141,6 +141,9 @@ primebank.admin.not_admin=No eres administrador
 primebank.admin.company.approved=Empresa aprobada: %s
 primebank.admin.company.not_found=Empresa no encontrada
 primebank.admin.cashback.set=Cashback global establecido a %s bps
+primebank.admin.central.balance=Saldo del Banco Central: %s
+primebank.admin.central.withdraw.ok=Retirado %s del Banco Central
+primebank.admin.central.withdraw.error.insufficient=Fondos insuficientes en el Banco Central
 
 # Mercado (primario)
 primebank.market.home.title=Mercado (Primario)
