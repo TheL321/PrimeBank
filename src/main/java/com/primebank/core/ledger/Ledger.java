@@ -25,54 +25,79 @@ public final class Ledger {
     }
 
     /*
-     English: Apply cashback to buyer funded by the central bank, atomically (min with central balance).
-     Español: Aplicar cashback al comprador financiado por el banco central, atómicamente (mínimo con saldo del central).
-    */
+     * English: Apply cashback to buyer funded by the central bank, atomically (min
+     * with central balance).
+     * Español: Aplicar cashback al comprador financiado por el banco central,
+     * atómicamente (mínimo con saldo del central).
+     */
     public OpResult applyCashbackToBuyer(String buyerId, long cashbackCents) {
-        if (cashbackCents <= 0) return new OpResult(true, "ok", "No cashback");
+        if (cashbackCents <= 0)
+            return new OpResult(true, "ok", "No cashback");
         String centralId = PrimeBankState.CENTRAL_ACCOUNT_ID;
         Account buyer = accounts.get(buyerId);
         Account central = accounts.get(centralId);
-        if (buyer == null || central == null) central = PrimeBankState.get().ensureCentralAccount();
+        if (buyer == null || central == null)
+            central = PrimeBankState.get().ensureCentralAccount();
         List<String> keys = new ArrayList<>();
-        keys.add(buyerId); keys.add(centralId);
+        keys.add(buyerId);
+        keys.add(centralId);
         Collections.sort(keys);
         List<ReentrantLock> locks = new ArrayList<>(keys.size());
-        for (String k : keys) { ReentrantLock l = com.primebank.core.locks.AccountLockManager.getLock(k); l.lock(); locks.add(l); }
+        for (String k : keys) {
+            ReentrantLock l = com.primebank.core.locks.AccountLockManager.getLock(k);
+            l.lock();
+            locks.add(l);
+        }
         try {
             long centralBal = central.getBalanceCents();
             long amt = Math.min(cashbackCents, Math.max(0, centralBal));
-            if (amt <= 0) return new OpResult(false, "central_insufficient", "Central has no funds");
+            if (amt <= 0)
+                return new OpResult(false, "central_insufficient", "Central has no funds");
             central.withdraw(amt);
             buyer.deposit(amt);
+            com.primebank.core.logging.TransactionLogger
+                    .log(String.format("CASHBACK: Buyer %s received %s cents from Central", buyerId, amt));
             return new OpResult(true, "ok", "Cashback applied");
         } finally {
-            for (int i = locks.size() - 1; i >= 0; i--) locks.get(i).unlock();
+            for (int i = locks.size() - 1; i >= 0; i--)
+                locks.get(i).unlock();
         }
     }
 
     /*
-     English: Primary market buy: buyer pays gross + buyerFee; company receives gross - issuerFee; fees to central.
-     Español: Compra en mercado primario: comprador paga bruto + comisión comprador; empresa recibe bruto - comisión emisor; comisiones al central.
-    */
-    public TransferResult marketPrimaryBuy(String buyerId, String companyId, long grossCents, int buyerFeeBps, int issuerFeeBps) {
-        if (grossCents <= 0) return new TransferResult(false, "amount_le_zero", "Amount must be > 0", false, 0);
+     * English: Primary market buy: buyer pays gross + buyerFee; company receives
+     * gross - issuerFee; fees to central.
+     * Español: Compra en mercado primario: comprador paga bruto + comisión
+     * comprador; empresa recibe bruto - comisión emisor; comisiones al central.
+     */
+    public TransferResult marketPrimaryBuy(String buyerId, String companyId, long grossCents, int buyerFeeBps,
+            int issuerFeeBps) {
+        if (grossCents <= 0)
+            return new TransferResult(false, "amount_le_zero", "Amount must be > 0", false, 0);
         if (buyerId == null || companyId == null || buyerId.equals(companyId)) {
             return new TransferResult(false, "invalid_accounts", "Invalid accounts", false, 0);
         }
         Account buyer = accounts.get(buyerId);
         Account company = accounts.get(companyId);
-        if (buyer == null || company == null) return new TransferResult(false, "account_not_found", "Account not found", false, 0);
+        if (buyer == null || company == null)
+            return new TransferResult(false, "account_not_found", "Account not found", false, 0);
         String centralId = PrimeBankState.CENTRAL_ACCOUNT_ID;
         Account central = accounts.get(centralId);
-        if (central == null) central = PrimeBankState.get().ensureCentralAccount();
+        if (central == null)
+            central = PrimeBankState.get().ensureCentralAccount();
 
         Set<String> keys = new HashSet<>();
-        keys.add(buyerId); keys.add(companyId); keys.add(centralId);
+        keys.add(buyerId);
+        keys.add(companyId);
+        keys.add(centralId);
         List<String> ordered = new ArrayList<>(keys);
         Collections.sort(ordered);
         List<ReentrantLock> locks = new ArrayList<>(ordered.size());
-        for (String k : ordered) { ReentrantLock l = com.primebank.core.locks.AccountLockManager.getLock(k); l.lock(); locks.add(l); }
+        for (String k : ordered) {
+            ReentrantLock l = com.primebank.core.locks.AccountLockManager.getLock(k);
+            l.lock();
+            locks.add(l);
+        }
         try {
             long buyerFee = Money.multiplyBps(grossCents, buyerFeeBps);
             long issuerFee = Money.multiplyBps(grossCents, issuerFeeBps);
@@ -83,17 +108,24 @@ public final class Ledger {
             buyer.withdraw(totalDebit);
             company.deposit(Money.add(grossCents, -issuerFee));
             long toCentral = Money.add(buyerFee, issuerFee);
-            if (toCentral > 0) central.deposit(toCentral);
+            if (toCentral > 0)
+                central.deposit(toCentral);
+            com.primebank.core.logging.TransactionLogger.log(
+                    String.format("MARKET BUY: Buyer %s bought from Company %s. Gross: %s, BuyerFee: %s, IssuerFee: %s",
+                            buyerId, companyId, grossCents, buyerFee, issuerFee));
             return new TransferResult(true, "ok", "Market primary completed", true, buyerFee);
         } finally {
-            for (int i = locks.size() - 1; i >= 0; i--) locks.get(i).unlock();
+            for (int i = locks.size() - 1; i >= 0; i--)
+                locks.get(i).unlock();
         }
     }
 
     /*
-     English: POS charge: withdraw full amount from buyer, deposit 95% to company and 5% to central atomically.
-     Español: Cobro POS: retirar el monto completo del comprador, depositar 95% a la empresa y 5% al banco central atómicamente.
-    */
+     * English: POS charge: withdraw full amount from buyer, deposit 95% to company
+     * and 5% to central atomically.
+     * Español: Cobro POS: retirar el monto completo del comprador, depositar 95% a
+     * la empresa y 5% al banco central atómicamente.
+     */
     public TransferResult posCharge(String buyerId, String companyId, long amountCents) {
         if (amountCents <= 0) {
             return new TransferResult(false, "amount_le_zero", "Amount must be > 0", false, 0);
@@ -108,13 +140,20 @@ public final class Ledger {
         }
         String centralId = PrimeBankState.CENTRAL_ACCOUNT_ID;
         Account central = accounts.get(centralId);
-        if (central == null) central = PrimeBankState.get().ensureCentralAccount();
+        if (central == null)
+            central = PrimeBankState.get().ensureCentralAccount();
 
         List<String> keys = new ArrayList<>();
-        keys.add(buyerId); keys.add(companyId); keys.add(centralId);
+        keys.add(buyerId);
+        keys.add(companyId);
+        keys.add(centralId);
         Collections.sort(keys);
         List<ReentrantLock> locks = new ArrayList<>(keys.size());
-        for (String k : keys) { ReentrantLock l = AccountLockManager.getLock(k); l.lock(); locks.add(l); }
+        for (String k : keys) {
+            ReentrantLock l = AccountLockManager.getLock(k);
+            l.lock();
+            locks.add(l);
+        }
         try {
             long bal = buyer.getBalanceCents();
             if (bal < amountCents) {
@@ -124,17 +163,22 @@ public final class Ledger {
             long toCentral = Money.add(amountCents, -toCompany);
             buyer.withdraw(amountCents);
             company.deposit(toCompany);
-            if (toCentral > 0) central.deposit(toCentral);
+            if (toCentral > 0)
+                central.deposit(toCentral);
+            com.primebank.core.logging.TransactionLogger
+                    .log(String.format("POS CHARGE: Buyer %s paid Company %s. Amount: %s, ToCompany: %s, ToCentral: %s",
+                            buyerId, companyId, amountCents, toCompany, toCentral));
             return new TransferResult(true, "ok", "Transfer completed", false, 0);
         } finally {
-            for (int i = locks.size() - 1; i >= 0; i--) locks.get(i).unlock();
+            for (int i = locks.size() - 1; i >= 0; i--)
+                locks.get(i).unlock();
         }
     }
 
     /*
-     English: Result of a deposit or withdraw operation.
-     Español: Resultado de una operación de depósito o retiro.
-    */
+     * English: Result of a deposit or withdraw operation.
+     * Español: Resultado de una operación de depósito o retiro.
+     */
     public static final class OpResult {
         public final boolean success;
         public final String code; // en: result code for i18n mapping; es: código de resultado para i18n
@@ -148,9 +192,9 @@ public final class Ledger {
     }
 
     /*
-     English: Result of a transfer operation.
-     Español: Resultado de una operación de transferencia.
-    */
+     * English: Result of a transfer operation.
+     * Español: Resultado de una operación de transferencia.
+     */
     public static final class TransferResult {
         public final boolean success;
         public final String code; // en: result code for i18n; es: código de resultado para i18n
@@ -168,17 +212,21 @@ public final class Ledger {
     }
 
     /*
-     English: Deposit amount into an account.
-     Español: Depositar monto en una cuenta.
-    */
+     * English: Deposit amount into an account.
+     * Español: Depositar monto en una cuenta.
+     */
     public OpResult deposit(String accountId, long amountCents) {
-        if (amountCents <= 0) return new OpResult(false, "amount_le_zero", "Amount must be > 0");
+        if (amountCents <= 0)
+            return new OpResult(false, "amount_le_zero", "Amount must be > 0");
         Account acc = accounts.get(accountId);
-        if (acc == null) return new OpResult(false, "account_not_found", "Account not found");
+        if (acc == null)
+            return new OpResult(false, "account_not_found", "Account not found");
         ReentrantLock lock = AccountLockManager.getLock(accountId);
         lock.lock();
         try {
             acc.deposit(amountCents);
+            com.primebank.core.logging.TransactionLogger
+                    .log(String.format("DEPOSIT: Account %s deposited %s cents", accountId, amountCents));
             return new OpResult(true, "ok", "Deposit completed");
         } finally {
             lock.unlock();
@@ -186,13 +234,15 @@ public final class Ledger {
     }
 
     /*
-     English: Withdraw amount from an account.
-     Español: Retirar monto de una cuenta.
-    */
+     * English: Withdraw amount from an account.
+     * Español: Retirar monto de una cuenta.
+     */
     public OpResult withdraw(String accountId, long amountCents) {
-        if (amountCents <= 0) return new OpResult(false, "amount_le_zero", "Amount must be > 0");
+        if (amountCents <= 0)
+            return new OpResult(false, "amount_le_zero", "Amount must be > 0");
         Account acc = accounts.get(accountId);
-        if (acc == null) return new OpResult(false, "account_not_found", "Account not found");
+        if (acc == null)
+            return new OpResult(false, "account_not_found", "Account not found");
         ReentrantLock lock = AccountLockManager.getLock(accountId);
         lock.lock();
         try {
@@ -200,6 +250,8 @@ public final class Ledger {
                 return new OpResult(false, "insufficient", "Insufficient funds");
             }
             acc.withdraw(amountCents);
+            com.primebank.core.logging.TransactionLogger
+                    .log(String.format("WITHDRAW: Account %s withdrew %s cents", accountId, amountCents));
             return new OpResult(true, "ok", "Withdraw completed");
         } finally {
             lock.unlock();
@@ -207,9 +259,13 @@ public final class Ledger {
     }
 
     /*
-     English: Transfer amount from one account to another. If amount > 50% of sender's starting balance, apply 2% fee to sender and route it to the central bank.
-     Español: Transferir monto de una cuenta a otra. Si el monto > 50% del saldo inicial del remitente, aplicar 2% de comisión al remitente y enviarla al banco central.
-    */
+     * English: Transfer amount from one account to another. If amount > 50% of
+     * sender's starting balance, apply 2% fee to sender and route it to the central
+     * bank.
+     * Español: Transferir monto de una cuenta a otra. Si el monto > 50% del saldo
+     * inicial del remitente, aplicar 2% de comisión al remitente y enviarla al
+     * banco central.
+     */
     public TransferResult transfer(String fromId, String toId, long amountCents) {
         if (amountCents <= 0) {
             return new TransferResult(false, "amount_le_zero", "Amount must be > 0", false, 0);
@@ -254,11 +310,40 @@ public final class Ledger {
             if (fee > 0) {
                 central.deposit(fee);
             }
+            com.primebank.core.logging.TransactionLogger
+                    .log(String.format("TRANSFER: From %s to %s. Amount: %s, Fee: %s", fromId, toId, amountCents, fee));
             return new TransferResult(true, "ok", "Transfer completed", feeApplied, fee);
         } finally {
             for (int i = locks.size() - 1; i >= 0; i--) {
                 locks.get(i).unlock();
             }
+        }
+    }
+
+    /*
+     * English: Admin withdraw from central bank.
+     * Español: Retiro de administrador del banco central.
+     */
+    public OpResult centralWithdraw(String adminName, long amountCents) {
+        if (amountCents <= 0)
+            return new OpResult(false, "amount_le_zero", "Amount must be > 0");
+        String centralId = PrimeBankState.CENTRAL_ACCOUNT_ID;
+        Account central = accounts.get(centralId);
+        if (central == null)
+            central = PrimeBankState.get().ensureCentralAccount();
+
+        ReentrantLock lock = AccountLockManager.getLock(centralId);
+        lock.lock();
+        try {
+            if (central.getBalanceCents() < amountCents) {
+                return new OpResult(false, "insufficient", "Insufficient funds");
+            }
+            central.withdraw(amountCents);
+            com.primebank.core.logging.TransactionLogger
+                    .log(String.format("CENTRAL WITHDRAW: Admin %s withdrew %s cents", adminName, amountCents));
+            return new OpResult(true, "ok", "Withdraw completed");
+        } finally {
+            lock.unlock();
         }
     }
 }

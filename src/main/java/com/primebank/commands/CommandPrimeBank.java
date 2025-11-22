@@ -525,25 +525,16 @@ public class CommandPrimeBank extends CommandBase {
                     break;
                 }
                 long cents = dollarsToCents(dollars);
-                com.primebank.core.accounts.Account central = PrimeBankState.get().ensureCentralAccount();
 
-                // Lock central account for thread safety
-                java.util.concurrent.locks.ReentrantLock lock = com.primebank.core.locks.AccountLockManager
-                        .getLock(PrimeBankState.CENTRAL_ACCOUNT_ID);
-                lock.lock();
-                try {
-                    if (central.getBalanceCents() < cents) {
-                        sender.sendMessage(
-                                new TextComponentTranslation("primebank.admin.central.withdraw.error.insufficient"));
-                    } else {
-                        central.withdraw(cents);
-                        CashUtil.giveCurrency(player, cents);
-                        sender.sendMessage(new TextComponentTranslation("primebank.admin.central.withdraw.ok",
-                                Money.formatUsd(cents)));
-                        BankPersistence.saveAllAsync();
-                    }
-                } finally {
-                    lock.unlock();
+                Ledger.OpResult r = ledger.centralWithdraw(player.getName(), cents);
+                if (r.success) {
+                    CashUtil.giveCurrency(player, cents);
+                    sender.sendMessage(new TextComponentTranslation("primebank.admin.central.withdraw.ok",
+                            Money.formatUsd(cents)));
+                    BankPersistence.saveAllAsync();
+                } else {
+                    sender.sendMessage(
+                            new TextComponentTranslation("primebank.admin.central.withdraw.error.insufficient"));
                 }
                 break;
             }

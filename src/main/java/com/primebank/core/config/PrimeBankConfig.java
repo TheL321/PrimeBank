@@ -1,5 +1,9 @@
 package com.primebank.core.config;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+
 /*
  English: Default configuration constants for PrimeBank. These will later be backed by serverconfig/primebank.toml.
  Español: Constantes de configuración por defecto para PrimeBank. Más adelante se respaldarán en serverconfig/primebank.toml.
@@ -9,9 +13,11 @@ public final class PrimeBankConfig {
     public static final int MARKET_SELLER_FEE_BPS = 500;
     public static final int POS_BANK_FEE_BPS = 500;
     /*
-     English: If true, clear the company's pending POS amount after each successful sale.
-     Español: Si es verdadero, limpiar el monto POS pendiente de la empresa tras cada venta exitosa.
-    */
+     * English: If true, clear the company's pending POS amount after each
+     * successful sale.
+     * Español: Si es verdadero, limpiar el monto POS pendiente de la empresa tras
+     * cada venta exitosa.
+     */
     public static final boolean POS_AUTOCLEAR_PENDING_AFTER_SALE = false;
 
     public static final double LOANS_DEFAULT_APR = 0.12;
@@ -22,12 +28,44 @@ public final class PrimeBankConfig {
 
     public static final boolean ALLOW_OFFLINE_MODE = true;
 
-    private PrimeBankConfig() {}
+    public static String DISCORD_WEBHOOK_URL = null;
+
+    private PrimeBankConfig() {
+    }
 
     /*
-     English: Reload defaults from disk (placeholder; uses constants for now).
-     Español: Recargar valores por defecto desde disco (marcador de posición; usa constantes por ahora).
-    */
+     * English: Reload defaults from disk (placeholder; uses constants for now).
+     * Español: Recargar valores por defecto desde disco (marcador de posición; usa
+     * constantes por ahora).
+     */
     public static void reloadDefaults() {
+    }
+
+    public static void load(File serverRoot) {
+        try {
+            File cfg = new File(serverRoot, "serverconfig/primebank.toml");
+            if (!cfg.exists())
+                return;
+            try (BufferedReader br = new BufferedReader(new FileReader(cfg))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    line = line.trim();
+                    if (line.startsWith("discord_webhook_url")) {
+                        int eq = line.indexOf('=');
+                        if (eq > 0) {
+                            String val = line.substring(eq + 1).trim();
+                            if (val.startsWith("\"") && val.endsWith("\"")) {
+                                val = val.substring(1, val.length() - 1);
+                            }
+                            if (!val.isEmpty()) {
+                                DISCORD_WEBHOOK_URL = val;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Ignore config load errors
+        }
     }
 }
