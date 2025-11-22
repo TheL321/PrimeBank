@@ -17,8 +17,13 @@ public class PacketMarketBuy implements IMessage {
     public String companyId;
     public int shares;
 
-    public PacketMarketBuy() {}
-    public PacketMarketBuy(String companyId, int shares) { this.companyId = companyId; this.shares = shares; }
+    public PacketMarketBuy() {
+    }
+
+    public PacketMarketBuy(String companyId, int shares) {
+        this.companyId = companyId;
+        this.shares = shares;
+    }
 
     @Override
     public void fromBytes(ByteBuf buf) {
@@ -44,7 +49,8 @@ public class PacketMarketBuy implements IMessage {
                 com.primebank.core.state.PrimeBankState state = com.primebank.core.state.PrimeBankState.get();
                 String cidIn = message.companyId;
                 String cid = state.resolveCompanyIdentifier(cidIn);
-                if (cid == null) cid = cidIn;
+                if (cid == null)
+                    cid = cidIn;
                 int shares = message.shares;
                 if (shares <= 0) {
                     p.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
@@ -55,15 +61,18 @@ public class PacketMarketBuy implements IMessage {
                 com.primebank.core.company.Company c = state.companies().get(cid);
                 long pps = (c == null) ? 0L : (c.valuationCurrentCents / 101L);
                 long gross = pps * shares;
-                com.primebank.market.MarketPrimaryService.Result r = com.primebank.market.MarketPrimaryService.get().buyShares(buyer, cid, shares);
+                com.primebank.market.MarketPrimaryService.Result r = com.primebank.market.MarketPrimaryService.get()
+                        .buyShares(p.getServerWorld().getMinecraftServer(), buyer, cid, shares);
                 if (r.ok) {
                     String label = state.getCompanyDisplay(cid);
-                    p.sendMessage(new TextComponentTranslation("primebank.market.buy.ok", shares, label, com.primebank.core.Money.formatUsd(pps), com.primebank.core.Money.formatUsd(gross)));
+                    p.sendMessage(new TextComponentTranslation("primebank.market.buy.ok", shares, label,
+                            com.primebank.core.Money.formatUsd(pps), com.primebank.core.Money.formatUsd(gross)));
                     // English: Send updated details back to refresh the GUI.
                     // Español: Enviar detalles actualizados para refrescar la GUI.
                     String displayName = state.getCompanyName(cid);
                     String shortName = state.getCompanyShortName(cid);
-                    if (displayName == null || displayName.isEmpty()) displayName = cid;
+                    if (displayName == null || displayName.isEmpty())
+                        displayName = cid;
                     c = state.companies().get(cid);
                     long valuationCurrent = c == null ? 0L : c.valuationCurrentCents;
                     long[] valuationHistory = new long[0];
@@ -77,10 +86,12 @@ public class PacketMarketBuy implements IMessage {
                     }
                     long refreshedPps = valuationCurrent <= 0 ? 0L : (valuationCurrent / 101L);
                     int listed = c == null ? 0 : c.listedShares;
-                    int yourHoldings = (c == null || c.holdings == null) ? 0 : c.holdings.getOrDefault(buyer.toString(), 0);
+                    int yourHoldings = (c == null || c.holdings == null) ? 0
+                            : c.holdings.getOrDefault(buyer.toString(), 0);
                     boolean blocked = valuationCurrent <= 0;
                     boolean owner = c != null && c.ownerUuid != null && c.ownerUuid.equals(buyer);
-                    com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketMarketDetails(cid, displayName, shortName, valuationCurrent, valuationHistory, refreshedPps, listed, yourHoldings, blocked, owner), p);
+                    com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketMarketDetails(cid, displayName, shortName,
+                            valuationCurrent, valuationHistory, refreshedPps, listed, yourHoldings, blocked, owner), p);
                 } else {
                     p.sendMessage(new TextComponentTranslation("primebank.market.buy.error." + r.error));
                 }

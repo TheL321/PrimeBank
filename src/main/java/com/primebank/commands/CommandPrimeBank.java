@@ -37,14 +37,18 @@ public class CommandPrimeBank extends CommandBase {
     }
 
     /*
-     English: Friendly company label for chat: display name if set; otherwise owner's username (if resolvable); otherwise raw id.
-     Español: Etiqueta amigable de empresa para chat: nombre visible si existe; de lo contrario, nombre del dueño (si se puede resolver); en su defecto id crudo.
-    */
+     * English: Friendly company label for chat: display name if set; otherwise
+     * owner's username (if resolvable); otherwise raw id.
+     * Español: Etiqueta amigable de empresa para chat: nombre visible si existe; de
+     * lo contrario, nombre del dueño (si se puede resolver); en su defecto id
+     * crudo.
+     */
     private String companyLabel(MinecraftServer server, String companyId) {
         String disp = PrimeBankState.get().getCompanyName(companyId);
         String ticker = PrimeBankState.get().getCompanyShortName(companyId);
         // English: If a display name exists, annotate with ticker when available.
-        // Español: Si existe nombre visible, anotarlo con ticker cuando esté disponible.
+        // Español: Si existe nombre visible, anotarlo con ticker cuando esté
+        // disponible.
         if (disp != null && !disp.isEmpty()) {
             if (ticker != null && !ticker.trim().isEmpty()) {
                 return String.format("%s (%s)", disp, ticker.trim());
@@ -56,10 +60,13 @@ public class CommandPrimeBank extends CommandBase {
                 String raw = companyId.substring(2);
                 java.util.UUID owner = java.util.UUID.fromString(raw);
                 net.minecraft.entity.player.EntityPlayerMP online = server.getPlayerList().getPlayerByUUID(owner);
-                if (online != null) return online.getName();
+                if (online != null)
+                    return online.getName();
                 com.mojang.authlib.GameProfile gp = server.getPlayerProfileCache().getProfileByUUID(owner);
-                if (gp != null && gp.getName() != null) return gp.getName();
-            } catch (Exception ignored) {}
+                if (gp != null && gp.getName() != null)
+                    return gp.getName();
+            } catch (Exception ignored) {
+            }
         }
         String base = companyId;
         if (ticker != null && !ticker.trim().isEmpty()) {
@@ -70,8 +77,10 @@ public class CommandPrimeBank extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        // English: Update usage to advertise ticker support; adminapprove now takes companyId|TICKER.
-        // Español: Actualizar uso para anunciar soporte de ticker; adminapprove ahora recibe companyId|TICKER.
+        // English: Update usage to advertise ticker support; adminapprove now takes
+        // companyId|TICKER.
+        // Español: Actualizar uso para anunciar soporte de ticker; adminapprove ahora
+        // recibe companyId|TICKER.
         return "/primebank <balance|deposit <d>|withdraw <d>|transfer <player|uuid> <d>|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <companyId|TICKER>|setcashbackbps <bps>|marketlist <shares> <companyId|TICKER>|marketbuy <companyId|TICKER> <shares>|reload>";
     }
 
@@ -103,14 +112,17 @@ public class CommandPrimeBank extends CommandBase {
             }
             case "setcompanyname": {
                 // English: Set or clear the display name for the player's default company.
-                // Español: Establecer o limpiar el nombre visible de la empresa por defecto del jugador.
+                // Español: Establecer o limpiar el nombre visible de la empresa por defecto del
+                // jugador.
                 String companyId = CompanyAccounts.ensureDefault(me);
                 if (args.length < 2) {
                     String current = PrimeBankState.get().getCompanyName(companyId);
                     String currentTicker = PrimeBankState.get().getCompanyShortName(companyId);
                     String label = companyLabel(server, companyId);
-                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.current", label, current == null ? "" : current));
-                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_current", label, currentTicker == null ? "" : currentTicker));
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.current", label,
+                            current == null ? "" : current));
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_current", label,
+                            currentTicker == null ? "" : currentTicker));
                     break;
                 }
                 String arg1 = args[1];
@@ -127,12 +139,14 @@ public class CommandPrimeBank extends CommandBase {
             }
             case "setcompanyticker": {
                 // English: Set or clear the short ticker for the player's default company.
-                // Español: Establecer o limpiar el ticker corto para la empresa por defecto del jugador.
+                // Español: Establecer o limpiar el ticker corto para la empresa por defecto del
+                // jugador.
                 String companyId = CompanyAccounts.ensureDefault(me);
                 if (args.length < 2) {
                     String label = companyLabel(server, companyId);
                     String currentTicker = PrimeBankState.get().getCompanyShortName(companyId);
-                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_current", label, currentTicker == null ? "" : currentTicker));
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_current", label,
+                            currentTicker == null ? "" : currentTicker));
                     break;
                 }
                 String arg1 = args[1];
@@ -152,20 +166,30 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "mycompanybalance": {
-                // English: Show the executing player's default company account balance (seller proceeds).
-                // Español: Mostrar el saldo de la cuenta de empresa por defecto del jugador (ingresos del vendedor).
+                // English: Show the executing player's default company account balance (seller
+                // proceeds).
+                // Español: Mostrar el saldo de la cuenta de empresa por defecto del jugador
+                // (ingresos del vendedor).
                 String companyId = CompanyAccounts.ensureDefault(me);
                 long bal = PrimeBankState.get().accounts().get(companyId).getBalanceCents();
                 String label = companyLabel(server, companyId);
-                sender.sendMessage(new TextComponentTranslation("primebank.company.balance", label, Money.formatUsd(bal)));
+                sender.sendMessage(
+                        new TextComponentTranslation("primebank.company.balance", label, Money.formatUsd(bal)));
                 break;
             }
             case "deposit": {
                 // English: Handle deposits specified in whole dollars by converting to cents.
-                // Español: Manejar depósitos especificados en dólares completos convirtiéndolos a centavos.
-                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_dollars")); return; }
+                // Español: Manejar depósitos especificados en dólares completos convirtiéndolos
+                // a centavos.
+                if (args.length < 2) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_dollars"));
+                    return;
+                }
                 long dollars = parseLongArg(args[1]);
-                if (dollars <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); return; }
+                if (dollars <= 0) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
+                    return;
+                }
                 long cents = dollarsToCents(dollars);
                 boolean spent = CashUtil.spendCurrency(player, cents);
                 if (!spent) {
@@ -179,9 +203,15 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "depositcents": {
-                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_cents")); return; }
+                if (args.length < 2) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_cents"));
+                    return;
+                }
                 long cents = parseLongArg(args[1]);
-                if (cents <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); return; }
+                if (cents <= 0) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
+                    return;
+                }
                 boolean spent = CashUtil.spendCurrency(player, cents);
                 if (!spent) {
                     sender.sendMessage(new TextComponentTranslation("primebank.deposit.not_enough_currency"));
@@ -194,11 +224,19 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "withdraw": {
-                // English: Handle withdrawals in whole dollars, returning currency items worth the amount.
-                // Español: Manejar retiros en dólares completos, devolviendo ítems de moneda por el monto.
-                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_dollars")); return; }
+                // English: Handle withdrawals in whole dollars, returning currency items worth
+                // the amount.
+                // Español: Manejar retiros en dólares completos, devolviendo ítems de moneda
+                // por el monto.
+                if (args.length < 2) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_dollars"));
+                    return;
+                }
                 long dollars = parseLongArg(args[1]);
-                if (dollars <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); return; }
+                if (dollars <= 0) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
+                    return;
+                }
                 long cents = dollarsToCents(dollars);
                 Ledger.OpResult r = ledger.withdraw(myAcc, cents);
                 String key = r.success ? "primebank.withdraw.ok" : ("primebank.withdraw.error." + r.code);
@@ -214,7 +252,10 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "withdrawcents": {
-                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_cents")); return; }
+                if (args.length < 2) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_cents"));
+                    return;
+                }
                 long cents = parseLongArg(args[1]);
                 Ledger.OpResult r = ledger.withdraw(myAcc, cents);
                 String key = r.success ? "primebank.withdraw.ok" : ("primebank.withdraw.error." + r.code);
@@ -226,17 +267,24 @@ public class CommandPrimeBank extends CommandBase {
                     sender.sendMessage(new TextComponentTranslation(key));
                 }
                 if (r.success) {
-                    // English: Give the withdrawn amount back as currency items to the player's inventory.
-                    // Español: Entregar el monto retirado como ítems de moneda al inventario del jugador.
+                    // English: Give the withdrawn amount back as currency items to the player's
+                    // inventory.
+                    // Español: Entregar el monto retirado como ítems de moneda al inventario del
+                    // jugador.
                     CashUtil.giveCurrency(player, cents);
                 }
                 BankPersistence.saveAllAsync();
                 break;
             }
             case "transfer": {
-                // English: Transfer whole dollars between personal accounts, applying fees when configured.
-                // Español: Transferir dólares completos entre cuentas personales, aplicando comisiones cuando existan.
-                if (args.length < 3) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); return; }
+                // English: Transfer whole dollars between personal accounts, applying fees when
+                // configured.
+                // Español: Transferir dólares completos entre cuentas personales, aplicando
+                // comisiones cuando existan.
+                if (args.length < 3) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_args"));
+                    return;
+                }
                 UUID to;
                 try {
                     to = UUID.fromString(args[1]);
@@ -245,12 +293,19 @@ public class CommandPrimeBank extends CommandBase {
                 }
                 String toAcc = PlayerAccounts.ensurePersonal(to);
                 long dollars = parseLongArg(args[2]);
-                if (dollars <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); return; }
+                if (dollars <= 0) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
+                    return;
+                }
                 long cents = dollarsToCents(dollars);
                 Ledger.TransferResult tr = ledger.transfer(myAcc, toAcc, cents);
                 if (tr.success) {
-                    if (tr.feeApplied) sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok_fee", Money.formatUsd(tr.feeCents)));
-                    else sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok"));
+                    if (tr.feeApplied)
+                        sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok_fee",
+                                Money.formatUsd(tr.feeCents)));
+                    else
+                        sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok"));
+                    com.primebank.util.NotificationHelper.notifyTransfer(server, me, to, cents);
                 } else {
                     sender.sendMessage(new TextComponentTranslation("primebank.transfer.error." + tr.code));
                 }
@@ -258,9 +313,13 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "transfercents": {
-                if (args.length < 3) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); return; }
+                if (args.length < 3) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_args"));
+                    return;
+                }
                 // English: Accept username or UUID for the recipient. Keep UUID support.
-                // Español: Aceptar nombre de usuario o UUID para el destinatario. Mantener soporte de UUID.
+                // Español: Aceptar nombre de usuario o UUID para el destinatario. Mantener
+                // soporte de UUID.
                 UUID to;
                 try {
                     to = UUID.fromString(args[1]);
@@ -271,8 +330,12 @@ public class CommandPrimeBank extends CommandBase {
                 long cents = parseLongArg(args[2]);
                 Ledger.TransferResult tr = ledger.transfer(myAcc, toAcc, cents);
                 if (tr.success) {
-                    if (tr.feeApplied) sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok_fee", Money.formatUsd(tr.feeCents)));
-                    else sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok"));
+                    if (tr.feeApplied)
+                        sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok_fee",
+                                Money.formatUsd(tr.feeCents)));
+                    else
+                        sender.sendMessage(new TextComponentTranslation("primebank.transfer.ok"));
+                    com.primebank.util.NotificationHelper.notifyTransfer(server, me, to, cents);
                 } else {
                     sender.sendMessage(new TextComponentTranslation("primebank.transfer.error." + tr.code));
                 }
@@ -280,8 +343,10 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "reload": {
-                // English: Reset and reload per-world data (accounts, companies) to avoid cross-world leakage.
-                // Español: Reiniciar y recargar datos por mundo (cuentas, empresas) para evitar fugas entre mundos.
+                // English: Reset and reload per-world data (accounts, companies) to avoid
+                // cross-world leakage.
+                // Español: Reiniciar y recargar datos por mundo (cuentas, empresas) para evitar
+                // fugas entre mundos.
                 File worldDir = server.getEntityWorld().getSaveHandler().getWorldDirectory();
                 PersistencePaths.setWorldDir(worldDir);
                 com.primebank.core.state.PrimeBankState.get().resetForNewWorld();
@@ -292,42 +357,65 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "adminapprove": {
-                // English: Admin-only: approve a company by ID or TICKER and grant majority shares to its owner.
-                // Español: Solo admin: aprobar una empresa por ID o TICKER y otorgar acciones mayoritarias a su dueño.
+                // English: Admin-only: approve a company by ID or TICKER and grant majority
+                // shares to its owner.
+                // Español: Solo admin: aprobar una empresa por ID o TICKER y otorgar acciones
+                // mayoritarias a su dueño.
                 if (!com.primebank.core.admin.AdminService.isAdmin(me, server, sender)) {
                     sender.sendMessage(new TextComponentTranslation("primebank.admin.not_admin"));
                     break;
                 }
-                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
+                if (args.length < 2) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_args"));
+                    break;
+                }
                 String ident = args[1];
                 // English: Accept either canonical id or ticker; resolve to company id.
                 // Español: Aceptar id canónico o ticker; resolver al id de la empresa.
                 String cid = com.primebank.core.state.PrimeBankState.get().resolveCompanyIdentifier(ident);
-                if (cid == null) cid = ident;
-                com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies().get(cid);
-                if (c == null) { sender.sendMessage(new TextComponentTranslation("primebank.admin.company.not_found")); break; }
+                if (cid == null)
+                    cid = ident;
+                com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies()
+                        .get(cid);
+                if (c == null) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.admin.company.not_found"));
+                    break;
+                }
                 c.approved = true;
                 c.approvedAt = System.currentTimeMillis();
                 if (c.ownerUuid != null) {
                     String ownerKey = c.ownerUuid.toString();
                     int cur = c.holdings.getOrDefault(ownerKey, 0);
-                    if (cur < 101) c.holdings.put(ownerKey, 101);
+                    if (cur < 101)
+                        c.holdings.put(ownerKey, 101);
                 }
                 com.primebank.persistence.CompanyPersistence.saveCompany(c);
-                sender.sendMessage(new TextComponentTranslation("primebank.admin.company.approved", companyLabel(server, cid)));
+                sender.sendMessage(
+                        new TextComponentTranslation("primebank.admin.company.approved", companyLabel(server, cid)));
                 break;
             }
             case "setcashbackbps": {
-                // English: Admin-only: set global cashback in basis points for POS purchases (credited to buyer from central).
-                // Español: Solo admin: establecer cashback global en puntos básicos para compras POS (acreditado al comprador desde el central).
+                // English: Admin-only: set global cashback in basis points for POS purchases
+                // (credited to buyer from central).
+                // Español: Solo admin: establecer cashback global en puntos básicos para
+                // compras POS (acreditado al comprador desde el central).
                 if (!com.primebank.core.admin.AdminService.isAdmin(me, server, sender)) {
                     sender.sendMessage(new TextComponentTranslation("primebank.admin.not_admin"));
                     break;
                 }
-                if (args.length < 2) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
+                if (args.length < 2) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_args"));
+                    break;
+                }
                 int bps;
-                try { bps = Integer.parseInt(args[1]); } catch (NumberFormatException e) { sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[1])); break; }
-                if (bps < 0) bps = 0;
+                try {
+                    bps = Integer.parseInt(args[1]);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[1]));
+                    break;
+                }
+                if (bps < 0)
+                    bps = 0;
                 com.primebank.core.state.PrimeBankState.get().setGlobalCashbackBps(bps);
                 BankPersistence.saveAllAsync();
                 sender.sendMessage(new TextComponentTranslation("primebank.admin.cashback.set", bps));
@@ -336,18 +424,31 @@ public class CommandPrimeBank extends CommandBase {
             case "marketlist": {
                 // English: Owner lists shares for sale on primary market.
                 // Español: El dueño lista acciones para la venta en mercado primario.
-                if (args.length < 3) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
+                if (args.length < 3) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_args"));
+                    break;
+                }
                 int shares;
-                try { shares = Integer.parseInt(args[1]); } catch (NumberFormatException e) { sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[1])); break; }
-                if (shares <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); break; }
+                try {
+                    shares = Integer.parseInt(args[1]);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[1]));
+                    break;
+                }
+                if (shares <= 0) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
+                    break;
+                }
                 java.util.UUID owner = me;
                 // English: Accept ticker or id for the company argument; now mandatory.
                 // Español: Aceptar ticker o id para el argumento de empresa; ahora obligatorio.
                 String resolved = com.primebank.core.state.PrimeBankState.get().resolveCompanyIdentifier(args[2]);
                 String companyId = resolved != null ? resolved : args[2];
-                com.primebank.market.MarketPrimaryService.Result r = com.primebank.market.MarketPrimaryService.get().listShares(owner, companyId, shares);
+                com.primebank.market.MarketPrimaryService.Result r = com.primebank.market.MarketPrimaryService.get()
+                        .listShares(owner, companyId, shares);
                 if (r.ok) {
-                    sender.sendMessage(new TextComponentTranslation("primebank.market.list.ok", shares, companyLabel(server, companyId)));
+                    sender.sendMessage(new TextComponentTranslation("primebank.market.list.ok", shares,
+                            companyLabel(server, companyId)));
                 } else {
                     sender.sendMessage(new TextComponentTranslation("primebank.market.list.error." + r.error));
                 }
@@ -356,23 +457,39 @@ public class CommandPrimeBank extends CommandBase {
             case "marketbuy": {
                 // English: Buyer purchases shares from company's listed inventory.
                 // Español: Comprador adquiere acciones del inventario listado de la empresa.
-                if (args.length < 3) { sender.sendMessage(new TextComponentTranslation("primebank.missing_args")); break; }
+                if (args.length < 3) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_args"));
+                    break;
+                }
                 String companyIdIn = args[1];
                 // English: Accept ticker or id for target company.
                 // Español: Aceptar ticker o id para la empresa objetivo.
                 String companyId = com.primebank.core.state.PrimeBankState.get().resolveCompanyIdentifier(companyIdIn);
-                if (companyId == null) companyId = companyIdIn;
+                if (companyId == null)
+                    companyId = companyIdIn;
                 int shares;
-                try { shares = Integer.parseInt(args[2]); } catch (NumberFormatException e) { sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[2])); break; }
-                if (shares <= 0) { sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero")); break; }
+                try {
+                    shares = Integer.parseInt(args[2]);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.error.bad_number", args[2]));
+                    break;
+                }
+                if (shares <= 0) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
+                    break;
+                }
                 java.util.UUID buyer = me;
                 // Precompute display price for feedback (best-effort).
-                com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies().get(companyId);
+                com.primebank.core.company.Company c = com.primebank.core.state.PrimeBankState.get().companies()
+                        .get(companyId);
                 long pps = (c == null) ? 0L : (c.valuationCurrentCents / 101L);
                 long gross = pps * shares;
-                com.primebank.market.MarketPrimaryService.Result r = com.primebank.market.MarketPrimaryService.get().buyShares(buyer, companyId, shares);
+                com.primebank.market.MarketPrimaryService.Result r = com.primebank.market.MarketPrimaryService.get()
+                        .buyShares(server, buyer, companyId, shares);
                 if (r.ok) {
-                    sender.sendMessage(new TextComponentTranslation("primebank.market.buy.ok", shares, companyLabel(server, companyId), com.primebank.core.Money.formatUsd(pps), com.primebank.core.Money.formatUsd(gross)));
+                    sender.sendMessage(new TextComponentTranslation("primebank.market.buy.ok", shares,
+                            companyLabel(server, companyId), com.primebank.core.Money.formatUsd(pps),
+                            com.primebank.core.Money.formatUsd(gross)));
                 } else {
                     sender.sendMessage(new TextComponentTranslation("primebank.market.buy.error." + r.error));
                 }
@@ -394,14 +511,18 @@ public class CommandPrimeBank extends CommandBase {
     }
 
     @Override
-    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, BlockPos targetPos) {
-        // English: Provide tab-completion for subcommands and usernames for transfercents.
-        // Español: Proveer autocompletado para subcomandos y nombres de usuario para transfercents.
+    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args,
+            BlockPos targetPos) {
+        // English: Provide tab-completion for subcommands and usernames for
+        // transfercents.
+        // Español: Proveer autocompletado para subcomandos y nombres de usuario para
+        // transfercents.
 
         // English: Suggest subcommands when typing the first argument.
         // Español: Sugerir subcomandos al escribir el primer argumento.
         if (args.length <= 1) {
-            String[] subs = new String[] { "balance", "deposit", "withdraw", "transfer", "depositcents", "withdrawcents", "transfercents", "mycompanybalance", "setcompanyname", "reload" };
+            String[] subs = new String[] { "balance", "deposit", "withdraw", "transfer", "depositcents",
+                    "withdrawcents", "transfercents", "mycompanybalance", "setcompanyname", "reload" };
             return CommandBase.getListOfStringsMatchingLastWord(args, subs);
         }
 
@@ -412,11 +533,13 @@ public class CommandPrimeBank extends CommandBase {
                 if (args.length == 2) {
                     // English: Suggest online player usernames for the recipient.
                     // Español: Sugerir nombres de jugadores en línea para el destinatario.
-                    return CommandBase.getListOfStringsMatchingLastWord(args, server.getPlayerList().getOnlinePlayerNames());
+                    return CommandBase.getListOfStringsMatchingLastWord(args,
+                            server.getPlayerList().getOnlinePlayerNames());
                 } else if (args.length == 3) {
                     // English: Suggest common dollar or cent amounts depending on subcommand.
                     // Español: Sugerir montos comunes en dólares o centavos según el subcomando.
-                    String[] suggestions = sub.equals("transfercents") ? new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" }
+                    String[] suggestions = sub.equals("transfercents")
+                            ? new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" }
                             : new String[] { "1", "5", "10", "20", "50", "100" };
                     return CommandBase.getListOfStringsMatchingLastWord(args, suggestions);
                 }
@@ -428,8 +551,10 @@ public class CommandPrimeBank extends CommandBase {
             case "withdrawcents": {
                 if (args.length == 2) {
                     // English: Suggest common dollar or cent amounts for deposit/withdraw commands.
-                    // Español: Sugerir montos comunes en dólares o centavos para los comandos depositar/retirar.
-                    String[] suggestions = sub.endsWith("cents") ? new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" }
+                    // Español: Sugerir montos comunes en dólares o centavos para los comandos
+                    // depositar/retirar.
+                    String[] suggestions = sub.endsWith("cents")
+                            ? new String[] { "1", "5", "10", "25", "50", "100", "500", "1000" }
                             : new String[] { "1", "5", "10", "20", "50", "100" };
                     return CommandBase.getListOfStringsMatchingLastWord(args, suggestions);
                 }
@@ -461,27 +586,33 @@ public class CommandPrimeBank extends CommandBase {
             return Long.parseLong(s);
         } catch (NumberFormatException e) {
             // English: Localized bad number error key; argument is injected via %s.
-            // Español: Clave localizada para error de número inválido; el argumento se inserta con %s.
+            // Español: Clave localizada para error de número inválido; el argumento se
+            // inserta con %s.
             throw new CommandException("primebank.error.bad_number", s);
         }
     }
 
     /*
-     English: Resolve a username to a UUID using online players, profile cache, and offline fallback.
-     Español: Resolver un nombre de usuario a UUID usando jugadores en línea, caché de perfiles y fallback offline.
-    */
+     * English: Resolve a username to a UUID using online players, profile cache,
+     * and offline fallback.
+     * Español: Resolver un nombre de usuario a UUID usando jugadores en línea,
+     * caché de perfiles y fallback offline.
+     */
     private UUID resolveUsernameToUuid(MinecraftServer server, String username) throws CommandException {
         // 1) Online players
         net.minecraft.entity.player.EntityPlayerMP online = server.getPlayerList().getPlayerByUsername(username);
-        if (online != null) return online.getUniqueID();
+        if (online != null)
+            return online.getUniqueID();
 
         // 2) Profile cache (players seen before)
         com.mojang.authlib.GameProfile gp = server.getPlayerProfileCache().getGameProfileForUsername(username);
-        if (gp != null && gp.getId() != null) return gp.getId();
+        if (gp != null && gp.getId() != null)
+            return gp.getId();
 
         // 3) Offline mode fallback: deterministic offline UUID
         if (!server.isServerInOnlineMode()) {
-            return java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return java.util.UUID
+                    .nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
 
         // 4) Not found
@@ -495,28 +626,28 @@ public class CommandPrimeBank extends CommandBase {
         sender.sendMessage(new TextComponentString(" /pb deposit <amount>"));
         sender.sendMessage(new TextComponentString(" /pb withdraw <amount>"));
         sender.sendMessage(new TextComponentString(" /pb transfer <player> <amount>"));
-        
+
         sender.sendMessage(new TextComponentString("§e-- Company --§r"));
         sender.sendMessage(new TextComponentString(" /pb mycompanybalance"));
         sender.sendMessage(new TextComponentString(" /pb setcompanyname <name|clear>"));
         sender.sendMessage(new TextComponentString(" /pb setcompanyticker <ticker|clear>"));
-        
+
         sender.sendMessage(new TextComponentString("§e-- Market --§r"));
         sender.sendMessage(new TextComponentString(" /pb marketlist <shares> <company>"));
         sender.sendMessage(new TextComponentString(" /pb marketbuy <company> <shares>"));
-        
+
         if (sender.canUseCommand(2, "gamemode")) {
-             sender.sendMessage(new TextComponentString("§c-- Admin --§r"));
-             sender.sendMessage(new TextComponentString(" /pb adminapprove <company>"));
-             sender.sendMessage(new TextComponentString(" /pb setcashbackbps <bps>"));
-             sender.sendMessage(new TextComponentString(" /pb reload"));
+            sender.sendMessage(new TextComponentString("§c-- Admin --§r"));
+            sender.sendMessage(new TextComponentString(" /pb adminapprove <company>"));
+            sender.sendMessage(new TextComponentString(" /pb setcashbackbps <bps>"));
+            sender.sendMessage(new TextComponentString(" /pb reload"));
         }
     }
 
     /*
-     English: Convert whole dollars to cents, guarding against overflow.
-     Español: Convertir dólares enteros a centavos, protegiendo contra overflow.
-    */
+     * English: Convert whole dollars to cents, guarding against overflow.
+     * Español: Convertir dólares enteros a centavos, protegiendo contra overflow.
+     */
     private long dollarsToCents(long dollars) throws CommandException {
         try {
             return Math.multiplyExact(dollars, 100L);

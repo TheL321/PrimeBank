@@ -195,3 +195,6 @@ primebank.market.buydialog.gross=Bruto (%s acciones): %s
 primebank.market.buydialog.buyer_fee=Comisión comprador (%s): %s
 primebank.market.buydialog.total=Total a pagar: %s
 primebank.market.buydialog.issuer_receives=Empresa recibe (%s): %s
+primebank.notify.transfer.received=Has recibido %s de %s
+primebank.notify.market.sold=Has vendido %s acciones de %s a %s por %s
+primebank.notify.pos.received=Venta POS recibida: %s de %s (%s)

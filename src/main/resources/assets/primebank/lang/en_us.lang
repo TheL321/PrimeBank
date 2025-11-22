@@ -197,3 +197,6 @@ primebank.card.owner.mismatch=This card belongs to another player
 primebank.card.tooltip.unlinked=Not linked
 primebank.card.tooltip.owner=Owner: %s
 primebank.card.tooltip.id=Card ID: %s
+primebank.notify.transfer.received=You received %s from %s
+primebank.notify.market.sold=You sold %s shares of %s to %s for %s
+primebank.notify.pos.received=POS sale received: %s from %s (%s)
