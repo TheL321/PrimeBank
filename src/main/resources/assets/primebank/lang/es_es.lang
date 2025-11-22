@@ -201,3 +201,5 @@ primebank.market.buydialog.issuer_receives=Empresa recibe (%s): %s
 primebank.notify.transfer.received=Has recibido %s de %s
 primebank.notify.market.sold=Has vendido %s acciones de %s a %s por %s
 primebank.notify.pos.received=Venta POS recibida: %s de %s (%s)
+primebank.history.empty=No hay transacciones recientes.
+primebank.history.header=Historial de Transacciones (Últimas 20):

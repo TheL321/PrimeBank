@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import com.primebank.core.Money;
 import com.primebank.core.accounts.Account;
@@ -18,10 +20,16 @@ import com.primebank.core.locks.AccountLockManager;
  Español: Operaciones del libro mayor con transferencias atómicas y lógica de comisiones.
 */
 public final class Ledger {
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final AccountRegistry accounts;
 
     public Ledger(AccountRegistry accounts) {
         this.accounts = accounts;
+    }
+
+    private void record(Account acc, String type, String other, long amount, String desc) {
+        String ts = LocalDateTime.now().format(DATE_FORMAT);
+        acc.addTransaction(new Account.TransactionRecord(ts, type, other, amount, desc));
     }
 
     /*
@@ -55,6 +63,10 @@ public final class Ledger {
                 return new OpResult(false, "central_insufficient", "Central has no funds");
             central.withdraw(amt);
             buyer.deposit(amt);
+
+            record(central, "CASHBACK_OUT", buyerId, amt, "Cashback to buyer");
+            record(buyer, "CASHBACK_IN", centralId, amt, "Cashback from central");
+
             com.primebank.core.logging.TransactionLogger
                     .log(String.format("CASHBACK: Buyer %s received %s cents from Central", buyerId, amt));
             return new OpResult(true, "ok", "Cashback applied");
@@ -106,10 +118,18 @@ public final class Ledger {
                 return new TransferResult(false, "insufficient", "Insufficient funds", true, buyerFee);
             }
             buyer.withdraw(totalDebit);
-            company.deposit(Money.add(grossCents, -issuerFee));
+            long netToCompany = Money.add(grossCents, -issuerFee);
+            company.deposit(netToCompany);
             long toCentral = Money.add(buyerFee, issuerFee);
             if (toCentral > 0)
                 central.deposit(toCentral);
+
+            record(buyer, "MARKET_BUY", companyId, totalDebit, "Shares buy (incl fees)");
+            record(company, "MARKET_SELL", buyerId, netToCompany, "Shares sell (net)");
+            if (toCentral > 0) {
+                record(central, "FEE_COLLECT", "MARKET", toCentral, "Market fees");
+            }
+
             com.primebank.core.logging.TransactionLogger.log(
                     String.format("MARKET BUY: Buyer %s bought from Company %s. Gross: %s, BuyerFee: %s, IssuerFee: %s",
                             buyerId, companyId, grossCents, buyerFee, issuerFee));
@@ -165,6 +185,13 @@ public final class Ledger {
             company.deposit(toCompany);
             if (toCentral > 0)
                 central.deposit(toCentral);
+
+            record(buyer, "POS_PAY", companyId, amountCents, "POS Payment");
+            record(company, "POS_RECEIVE", buyerId, toCompany, "POS Revenue (95%)");
+            if (toCentral > 0) {
+                record(central, "FEE_COLLECT", "POS", toCentral, "POS Fee (5%)");
+            }
+
             com.primebank.core.logging.TransactionLogger
                     .log(String.format("POS CHARGE: Buyer %s paid Company %s. Amount: %s, ToCompany: %s, ToCentral: %s",
                             buyerId, companyId, amountCents, toCompany, toCentral));
@@ -225,6 +252,7 @@ public final class Ledger {
         lock.lock();
         try {
             acc.deposit(amountCents);
+            record(acc, "DEPOSIT", "SYSTEM", amountCents, "Manual Deposit");
             com.primebank.core.logging.TransactionLogger
                     .log(String.format("DEPOSIT: Account %s deposited %s cents", accountId, amountCents));
             return new OpResult(true, "ok", "Deposit completed");
@@ -250,6 +278,7 @@ public final class Ledger {
                 return new OpResult(false, "insufficient", "Insufficient funds");
             }
             acc.withdraw(amountCents);
+            record(acc, "WITHDRAW", "SYSTEM", amountCents, "Manual Withdraw");
             com.primebank.core.logging.TransactionLogger
                     .log(String.format("WITHDRAW: Account %s withdrew %s cents", accountId, amountCents));
             return new OpResult(true, "ok", "Withdraw completed");
@@ -310,6 +339,13 @@ public final class Ledger {
             if (fee > 0) {
                 central.deposit(fee);
             }
+
+            record(from, "TRANSFER_OUT", toId, totalDebit, "Transfer to " + toId);
+            record(to, "TRANSFER_IN", fromId, amountCents, "Transfer from " + fromId);
+            if (fee > 0) {
+                record(central, "FEE_COLLECT", fromId, fee, "Transfer fee");
+            }
+
             com.primebank.core.logging.TransactionLogger
                     .log(String.format("TRANSFER: From %s to %s. Amount: %s, Fee: %s", fromId, toId, amountCents, fee));
             return new TransferResult(true, "ok", "Transfer completed", feeApplied, fee);
@@ -339,6 +375,7 @@ public final class Ledger {
                 return new OpResult(false, "insufficient", "Insufficient funds");
             }
             central.withdraw(amountCents);
+            record(central, "ADMIN_WITHDRAW", adminName, amountCents, "Admin withdraw");
             com.primebank.core.logging.TransactionLogger
                     .log(String.format("CENTRAL WITHDRAW: Admin %s withdrew %s cents", adminName, amountCents));
             return new OpResult(true, "ok", "Withdraw completed");
@@ -346,4 +383,5 @@ public final class Ledger {
             lock.unlock();
         }
     }
+
 }

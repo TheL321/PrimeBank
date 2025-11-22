@@ -81,7 +81,7 @@ public class CommandPrimeBank extends CommandBase {
         // companyId|TICKER.
         // Español: Actualizar uso para anunciar soporte de ticker; adminapprove ahora
         // recibe companyId|TICKER.
-        return "/primebank <balance|deposit <d>|withdraw <d>|transfer <player|uuid> <d>|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <companyId|TICKER>|setcashbackbps <bps>|marketlist <shares> <companyId|TICKER>|marketbuy <companyId|TICKER> <shares>|centralbalance|centralwithdraw <d>|reload>";
+        return "/primebank <balance|history|deposit <d>|withdraw <d>|transfer <player|uuid> <d>|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <companyId|TICKER>|setcashbackbps <bps>|marketlist <shares> <companyId|TICKER>|marketbuy <companyId|TICKER> <shares>|centralbalance|centralwithdraw <d>|reload>";
     }
 
     @Override
@@ -108,6 +108,21 @@ public class CommandPrimeBank extends CommandBase {
             case "balance": {
                 long bal = PrimeBankState.get().accounts().get(myAcc).getBalanceCents();
                 sender.sendMessage(new TextComponentTranslation("primebank.balance", Money.formatUsd(bal)));
+                break;
+            }
+            case "history": {
+                com.primebank.core.accounts.Account acc = PrimeBankState.get().accounts().get(myAcc);
+                java.util.List<com.primebank.core.accounts.Account.TransactionRecord> hist = acc.getHistory();
+                if (hist.isEmpty()) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.history.empty"));
+                } else {
+                    sender.sendMessage(new TextComponentTranslation("primebank.history.header"));
+                    for (com.primebank.core.accounts.Account.TransactionRecord r : hist) {
+                        String line = String.format("§7[%s]§r §e%s§r: %s §7(%s)§r", r.timestamp, r.type,
+                                Money.formatUsd(r.amount), r.description);
+                        sender.sendMessage(new TextComponentString(line));
+                    }
+                }
                 break;
             }
             case "setcompanyname": {
@@ -564,7 +579,7 @@ public class CommandPrimeBank extends CommandBase {
         // English: Suggest subcommands when typing the first argument.
         // Español: Sugerir subcomandos al escribir el primer argumento.
         if (args.length <= 1) {
-            String[] subs = new String[] { "balance", "deposit", "withdraw", "transfer", "depositcents",
+            String[] subs = new String[] { "balance", "history", "deposit", "withdraw", "transfer", "depositcents",
                     "withdrawcents", "transfercents", "mycompanybalance", "setcompanyname", "reload", "centralbalance",
                     "centralwithdraw" };
             return CommandBase.getListOfStringsMatchingLastWord(args, subs);
@@ -667,6 +682,7 @@ public class CommandPrimeBank extends CommandBase {
         sender.sendMessage(new TextComponentString("§6PrimeBank Commands:§r"));
         sender.sendMessage(new TextComponentString("§e-- Basic --§r"));
         sender.sendMessage(new TextComponentString(" /pb balance"));
+        sender.sendMessage(new TextComponentString(" /pb history"));
         sender.sendMessage(new TextComponentString(" /pb deposit <amount>"));
         sender.sendMessage(new TextComponentString(" /pb withdraw <amount>"));
         sender.sendMessage(new TextComponentString(" /pb transfer <player> <amount>"));
