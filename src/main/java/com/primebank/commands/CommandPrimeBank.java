@@ -118,9 +118,11 @@ public class CommandPrimeBank extends CommandBase {
                 } else {
                     sender.sendMessage(new TextComponentTranslation("primebank.history.header"));
                     for (com.primebank.core.accounts.Account.TransactionRecord r : hist) {
-                        String line = String.format("§7[%s]§r §e%s§r: %s §7(%s)§r", r.timestamp, r.type,
-                                Money.formatUsd(r.amount), r.description);
-                        sender.sendMessage(new TextComponentString(line));
+                        sender.sendMessage(new TextComponentTranslation("primebank.history.line",
+                                r.timestamp,
+                                new TextComponentTranslation("primebank.history.type." + r.type),
+                                Money.formatUsd(r.amount),
+                                r.description));
                     }
                 }
                 break;
