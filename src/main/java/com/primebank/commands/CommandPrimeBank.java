@@ -81,7 +81,7 @@ public class CommandPrimeBank extends CommandBase {
         // companyId|TICKER.
         // Español: Actualizar uso para anunciar soporte de ticker; adminapprove ahora
         // recibe companyId|TICKER.
-        return "/primebank <balance|history|deposit <d>|withdraw <d>|transfer <player|uuid> <d>|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <companyId|TICKER>|setcashbackbps <bps>|marketlist <shares> <companyId|TICKER>|marketbuy <companyId|TICKER> <shares>|centralbalance|centralwithdraw <d>|reload>";
+        return "/primebank <balance|history|deposit <d>|withdraw <d>|transfer <player|uuid> <d>|depositcents <c>|withdrawcents <c>|transfercents <player|uuid> <c>|mycompanybalance|mycompanies|companywithdraw <companyId|TICKER> <d>|setcompanyname <name|clear>|setcompanyticker <ticker|clear>|adminapprove <companyId|TICKER>|setcashbackbps <bps>|marketlist <shares> <companyId|TICKER>|marketbuy <companyId|TICKER> <shares>|centralbalance|centralwithdraw <d>|reload>";
     }
 
     @Override
@@ -192,6 +192,66 @@ public class CommandPrimeBank extends CommandBase {
                 String label = companyLabel(server, companyId);
                 sender.sendMessage(
                         new TextComponentTranslation("primebank.company.balance", label, Money.formatUsd(bal)));
+                break;
+            }
+            case "mycompanies": {
+                // English: List all companies owned by the player with their balances.
+                // Español: Listar todas las empresas propiedad del jugador con sus saldos.
+                java.util.Collection<com.primebank.core.company.Company> all = PrimeBankState.get().companies().all();
+                boolean found = false;
+                sender.sendMessage(new TextComponentTranslation("primebank.company.list.header"));
+                for (com.primebank.core.company.Company c : all) {
+                    if (c.ownerUuid != null && c.ownerUuid.equals(me)) {
+                        found = true;
+                        long bal = PrimeBankState.get().accounts().get(c.id).getBalanceCents();
+                        String label = companyLabel(server, c.id);
+                        sender.sendMessage(new TextComponentTranslation("primebank.company.list.item", label,
+                                Money.formatUsd(bal)));
+                    }
+                }
+                if (!found) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.list.none"));
+                }
+                break;
+            }
+            case "companywithdraw": {
+                // English: Withdraw from a specific company owned by the player.
+                // Español: Retirar de una empresa específica propiedad del jugador.
+                if (args.length < 3) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.missing_args"));
+                    break;
+                }
+                String ident = args[1];
+                String companyId = PrimeBankState.get().resolveCompanyIdentifier(ident);
+                if (companyId == null)
+                    companyId = ident;
+
+                com.primebank.core.company.Company c = PrimeBankState.get().companies().get(companyId);
+                if (c == null) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.admin.company.not_found"));
+                    break;
+                }
+                if (!me.equals(c.ownerUuid)) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.not_owner"));
+                    break;
+                }
+
+                long dollars = parseLongArg(args[2]);
+                if (dollars <= 0) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
+                    break;
+                }
+                long cents = dollarsToCents(dollars);
+
+                Ledger.OpResult r = ledger.withdraw(companyId, cents);
+                String key = r.success ? "primebank.withdraw.ok" : ("primebank.withdraw.error." + r.code);
+                if (r.success) {
+                    sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
+                    CashUtil.giveCurrency(player, cents);
+                    BankPersistence.saveAllAsync();
+                } else {
+                    sender.sendMessage(new TextComponentTranslation(key));
+                }
                 break;
             }
             case "deposit": {
@@ -582,7 +642,8 @@ public class CommandPrimeBank extends CommandBase {
         // Español: Sugerir subcomandos al escribir el primer argumento.
         if (args.length <= 1) {
             String[] subs = new String[] { "balance", "history", "deposit", "withdraw", "transfer", "depositcents",
-                    "withdrawcents", "transfercents", "mycompanybalance", "setcompanyname", "reload", "centralbalance",
+                    "withdrawcents", "transfercents", "mycompanybalance", "mycompanies", "companywithdraw",
+                    "setcompanyname", "reload", "centralbalance",
                     "centralwithdraw" };
             return CommandBase.getListOfStringsMatchingLastWord(args, subs);
         }
@@ -632,6 +693,29 @@ public class CommandPrimeBank extends CommandBase {
                 if (args.length == 2) {
                     String[] opts = new String[] { "clear" };
                     return CommandBase.getListOfStringsMatchingLastWord(args, opts);
+                }
+                break;
+            }
+            case "companywithdraw": {
+                if (args.length == 2) {
+                    // English: Suggest owned companies (tickers or ids).
+                    // Español: Sugerir empresas propias (tickers o ids).
+                    if (sender instanceof EntityPlayerMP) {
+                        EntityPlayerMP p = (EntityPlayerMP) sender;
+                        java.util.List<String> owned = new java.util.ArrayList<>();
+                        for (com.primebank.core.company.Company c : PrimeBankState.get().companies().all()) {
+                            if (c.ownerUuid != null && c.ownerUuid.equals(p.getUniqueID())) {
+                                if (c.shortName != null)
+                                    owned.add(c.shortName);
+                                else
+                                    owned.add(c.id);
+                            }
+                        }
+                        return CommandBase.getListOfStringsMatchingLastWord(args, owned);
+                    }
+                } else if (args.length == 3) {
+                    String[] suggestions = new String[] { "1", "5", "10", "20", "50", "100" };
+                    return CommandBase.getListOfStringsMatchingLastWord(args, suggestions);
                 }
                 break;
             }
@@ -691,6 +775,8 @@ public class CommandPrimeBank extends CommandBase {
 
         sender.sendMessage(new TextComponentString("§e-- Company --§r"));
         sender.sendMessage(new TextComponentString(" /pb mycompanybalance"));
+        sender.sendMessage(new TextComponentString(" /pb mycompanies"));
+        sender.sendMessage(new TextComponentString(" /pb companywithdraw <company> <amount>"));
         sender.sendMessage(new TextComponentString(" /pb setcompanyname <name|clear>"));
         sender.sendMessage(new TextComponentString(" /pb setcompanyticker <ticker|clear>"));
 
