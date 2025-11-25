@@ -134,6 +134,10 @@ primebank.company.name.set=Company name set to: %s
 primebank.company.name.cleared=Company display name cleared
 primebank.company.name.short_set=Company ticker set to: %s
 primebank.company.name.short_cleared=Company ticker cleared
+primebank.company.list.header=Your Companies:
+primebank.company.list.item=%s - Balance: %s
+primebank.company.list.none=You do not own any companies
+primebank.company.not_owner=You are not the owner of this company
 
 # Market (primary)
 primebank.market.home.title=Market (Primary)

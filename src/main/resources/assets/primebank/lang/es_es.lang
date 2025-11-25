@@ -101,8 +101,15 @@ primebank.terminal.deposit_added=Depositado %s — Saldo: %s
 # Empresa
 primebank.company.balance=Empresa %s — Saldo: %s
 primebank.company.name.current=Empresa %s — Nombre actual: %s
+primebank.company.name.short_current=Empresa %s — Ticker actual: %s
 primebank.company.name.set=Nombre de la empresa establecido a: %s
 primebank.company.name.cleared=Nombre visible de la empresa limpiado
+primebank.company.name.short_set=Ticker de la empresa establecido a: %s
+primebank.company.name.short_cleared=Ticker de la empresa limpiado
+primebank.company.list.header=Tus Empresas:
+primebank.company.list.item=%s - Saldo: %s
+primebank.company.list.none=No posees ninguna empresa
+primebank.company.not_owner=No eres el dueño de esta empresa
 
 # Verificación de dueño de tarjeta
 primebank.card.required=Debes sostener una Tarjeta PrimeBank para pagar
@@ -181,6 +188,7 @@ primebank.market.details.listed=Acciones listadas: %s
 primebank.market.details.your_holdings=Tus tenencias: %s
 primebank.market.details.blocked=El comercio está bloqueado hasta la primera valoración
 primebank.market.details.buy=Comprar Acciones
+primebank.market.details.buy.ok=Orden de compra enviada
 primebank.market.details.refresh=Actualizar
 primebank.market.details.valuation=Valoración actual: %s
 primebank.market.details.graph_caption=Últimas %s valoraciones
