@@ -243,12 +243,21 @@ public class CommandPrimeBank extends CommandBase {
                 }
                 long cents = dollarsToCents(dollars);
 
+                // English: SECURITY FIX: Save BEFORE giving items to prevent money duplication
+                // on crash.
+                // Español: CORRECCIÓN DE SEGURIDAD: Guardar ANTES de entregar ítems para
+                // prevenir duplicación en caso de crash.
                 Ledger.OpResult r = ledger.withdraw(companyId, cents);
                 String key = r.success ? "primebank.withdraw.ok" : ("primebank.withdraw.error." + r.code);
                 if (r.success) {
+                    // Step 1: Withdraw from ledger (already done above)
+                    // Step 2: Save bank data IMMEDIATELY with blocking save
+                    BankPersistence.saveAllBlocking();
+                    // Step 3: Give items to player
                     sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
                     CashUtil.giveCurrency(player, cents);
-                    BankPersistence.saveAllAsync();
+                    // Step 4: Force player data save to minimize item loss on crash
+                    server.getPlayerList().saveAllPlayerData();
                 } else {
                     sender.sendMessage(new TextComponentTranslation(key));
                 }
@@ -315,17 +324,24 @@ public class CommandPrimeBank extends CommandBase {
                     return;
                 }
                 long cents = dollarsToCents(dollars);
+                // English: SECURITY FIX: Save BEFORE giving items to prevent money duplication
+                // on crash.
+                // Español: CORRECCIÓN DE SEGURIDAD: Guardar ANTES de entregar ítems para
+                // prevenir duplicación en caso de crash.
                 Ledger.OpResult r = ledger.withdraw(myAcc, cents);
                 String key = r.success ? "primebank.withdraw.ok" : ("primebank.withdraw.error." + r.code);
                 if (r.success) {
+                    // Step 1: Withdraw from ledger (already done above)
+                    // Step 2: Save bank data IMMEDIATELY with blocking save
+                    BankPersistence.saveAllBlocking();
+                    // Step 3: Give items to player
                     sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
+                    CashUtil.giveCurrency(player, cents);
+                    // Step 4: Force player data save to minimize item loss on crash
+                    server.getPlayerList().saveAllPlayerData();
                 } else {
                     sender.sendMessage(new TextComponentTranslation(key));
                 }
-                if (r.success) {
-                    CashUtil.giveCurrency(player, cents);
-                }
-                BankPersistence.saveAllAsync();
                 break;
             }
             case "withdrawcents": {
@@ -334,23 +350,28 @@ public class CommandPrimeBank extends CommandBase {
                     return;
                 }
                 long cents = parseLongArg(args[1]);
+                if (cents <= 0) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
+                    return;
+                }
+                // English: SECURITY FIX: Save BEFORE giving items to prevent money duplication
+                // on crash.
+                // Español: CORRECCIÓN DE SEGURIDAD: Guardar ANTES de entregar ítems para
+                // prevenir duplicación en caso de crash.
                 Ledger.OpResult r = ledger.withdraw(myAcc, cents);
                 String key = r.success ? "primebank.withdraw.ok" : ("primebank.withdraw.error." + r.code);
                 if (r.success) {
-                    // English: Include withdrawn amount in the success message.
-                    // Español: Incluir el monto retirado en el mensaje de éxito.
+                    // Step 1: Withdraw from ledger (already done above)
+                    // Step 2: Save bank data IMMEDIATELY with blocking save
+                    BankPersistence.saveAllBlocking();
+                    // Step 3: Give items to player with success message
                     sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
+                    CashUtil.giveCurrency(player, cents);
+                    // Step 4: Force player data save to minimize item loss on crash
+                    server.getPlayerList().saveAllPlayerData();
                 } else {
                     sender.sendMessage(new TextComponentTranslation(key));
                 }
-                if (r.success) {
-                    // English: Give the withdrawn amount back as currency items to the player's
-                    // inventory.
-                    // Español: Entregar el monto retirado como ítems de moneda al inventario del
-                    // jugador.
-                    CashUtil.giveCurrency(player, cents);
-                }
-                BankPersistence.saveAllAsync();
                 break;
             }
             case "transfer": {
@@ -405,6 +426,10 @@ public class CommandPrimeBank extends CommandBase {
                 }
                 String toAcc = PlayerAccounts.ensurePersonal(to);
                 long cents = parseLongArg(args[2]);
+                if (cents <= 0) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.amount_le_zero"));
+                    return;
+                }
                 Ledger.TransferResult tr = ledger.transfer(myAcc, toAcc, cents);
                 if (tr.success) {
                     if (tr.feeApplied)
@@ -603,12 +628,21 @@ public class CommandPrimeBank extends CommandBase {
                 }
                 long cents = dollarsToCents(dollars);
 
+                // English: SECURITY FIX: Save BEFORE giving items to prevent money duplication
+                // on crash.
+                // Español: CORRECCIÓN DE SEGURIDAD: Guardar ANTES de entregar ítems para
+                // prevenir duplicación en caso de crash.
                 Ledger.OpResult r = ledger.centralWithdraw(player.getName(), cents);
                 if (r.success) {
+                    // Step 1: Withdraw from ledger (already done above)
+                    // Step 2: Save bank data IMMEDIATELY with blocking save
+                    BankPersistence.saveAllBlocking();
+                    // Step 3: Give items to player
                     CashUtil.giveCurrency(player, cents);
                     sender.sendMessage(new TextComponentTranslation("primebank.admin.central.withdraw.ok",
                             Money.formatUsd(cents)));
-                    BankPersistence.saveAllAsync();
+                    // Step 4: Force player data save to minimize item loss on crash
+                    server.getPlayerList().saveAllPlayerData();
                 } else {
                     sender.sendMessage(
                             new TextComponentTranslation("primebank.admin.central.withdraw.error.insufficient"));

@@ -12,7 +12,8 @@ import net.minecraft.util.SoundCategory;
  Español: Utilidad para recolectar todas las pilas de ItemCurrency del inventario del jugador y devolver el total en centavos.
 */
 public final class CashUtil {
-    private CashUtil() {}
+    private CashUtil() {
+    }
 
     public static long collectAllCurrency(EntityPlayerMP player) {
         long total = 0L;
@@ -45,11 +46,14 @@ public final class CashUtil {
     }
 
     /*
-     English: Try to spend exactly 'amountCents' from player's currency stacks. Returns true if removed, false otherwise.
-     Español: Intenta gastar exactamente 'amountCents' de las pilas de moneda del jugador. Devuelve true si se removió, false en caso contrario.
-    */
+     * English: Try to spend exactly 'amountCents' from player's currency stacks.
+     * Returns true if removed, false otherwise.
+     * Español: Intenta gastar exactamente 'amountCents' de las pilas de moneda del
+     * jugador. Devuelve true si se removió, false en caso contrario.
+     */
     public static boolean spendCurrency(EntityPlayerMP player, long amountCents) {
-        if (amountCents <= 0) return false;
+        if (amountCents <= 0)
+            return false;
         // Snapshot of currency slots: arrays for performance and simplicity
         final int MAIN = 0, OFF = 1;
         int capacity = player.inventory.mainInventory.size() + player.inventory.offHandInventory.size();
@@ -62,82 +66,138 @@ public final class CashUtil {
         for (int i = 0; i < main.size(); i++) {
             ItemStack st = main.get(i);
             if (!st.isEmpty() && st.getItem() instanceof ItemCurrency) {
-                invType[n] = MAIN; index[n] = i; value[n] = ((ItemCurrency) st.getItem()).getValueCents(); count[n] = st.getCount(); n++;
+                invType[n] = MAIN;
+                index[n] = i;
+                value[n] = ((ItemCurrency) st.getItem()).getValueCents();
+                count[n] = st.getCount();
+                n++;
             }
         }
         NonNullList<ItemStack> off = player.inventory.offHandInventory;
         for (int i = 0; i < off.size(); i++) {
             ItemStack st = off.get(i);
             if (!st.isEmpty() && st.getItem() instanceof ItemCurrency) {
-                invType[n] = OFF; index[n] = i; value[n] = ((ItemCurrency) st.getItem()).getValueCents(); count[n] = st.getCount(); n++;
+                invType[n] = OFF;
+                index[n] = i;
+                value[n] = ((ItemCurrency) st.getItem()).getValueCents();
+                count[n] = st.getCount();
+                n++;
             }
         }
-        if (n == 0) return false;
+        if (n == 0)
+            return false;
         // Sort slots by value descending (simple selection sort for small n)
         for (int i = 0; i < n; i++) {
             int max = i;
-            for (int j = i + 1; j < n; j++) if (value[j] > value[max]) max = j;
+            for (int j = i + 1; j < n; j++)
+                if (value[j] > value[max])
+                    max = j;
             if (max != i) {
-                int ti = invType[i]; invType[i] = invType[max]; invType[max] = ti;
-                int ii = index[i]; index[i] = index[max]; index[max] = ii;
-                long vi = value[i]; value[i] = value[max]; value[max] = vi;
-                int ci = count[i]; count[i] = count[max]; count[max] = ci;
+                int ti = invType[i];
+                invType[i] = invType[max];
+                invType[max] = ti;
+                int ii = index[i];
+                index[i] = index[max];
+                index[max] = ii;
+                long vi = value[i];
+                value[i] = value[max];
+                value[max] = vi;
+                int ci = count[i];
+                count[i] = count[max];
+                count[max] = ci;
             }
         }
         long remaining = amountCents;
         int[] use = new int[n]; // units to consume per slot
         for (int i = 0; i < n && remaining > 0; i++) {
             long v = value[i];
-            if (v <= 0) continue;
+            if (v <= 0)
+                continue;
             long maxUnits = Math.min(count[i], (int) Math.min(Integer.MAX_VALUE, remaining / v));
             if (maxUnits > 0) {
                 use[i] = (int) maxUnits;
                 remaining -= v * maxUnits;
             }
         }
-        if (remaining != 0) return false; // Cannot compose exact amount
-        // Apply decrements to actual inventory
+        if (remaining != 0)
+            return false; // Cannot compose exact amount
+        // English: Apply decrements to actual inventory with re-validation to prevent
+        // race conditions.
+        // Español: Aplicar decrementos al inventario actual con re-validación para
+        // prevenir condiciones de carrera.
         for (int i = 0; i < n; i++) {
-            if (use[i] <= 0) continue;
-            NonNullList<ItemStack> list = (invType[i] == MAIN) ? player.inventory.mainInventory : player.inventory.offHandInventory;
+            if (use[i] <= 0)
+                continue;
+            NonNullList<ItemStack> list = (invType[i] == MAIN) ? player.inventory.mainInventory
+                    : player.inventory.offHandInventory;
             ItemStack st = list.get(index[i]);
-            if (!st.isEmpty()) {
-                st.shrink(use[i]);
-                if (st.getCount() <= 0) list.set(index[i], ItemStack.EMPTY);
+
+            // English: SECURITY FIX: Re-validate that the stack is still currency with the
+            // expected value.
+            // If inventory has changed since snapshot, abort the entire transaction to
+            // prevent duplication.
+            // Español: CORRECCIÓN DE SEGURIDAD: Re-validar que el stack sigue siendo moneda
+            // con el valor esperado.
+            // Si el inventario cambió desde la instantánea, abortar toda la transacción
+            // para prevenir duplicación.
+            if (st.isEmpty() || !(st.getItem() instanceof ItemCurrency)) {
+                return false; // Inventory changed, abort
             }
+            ItemCurrency curr = (ItemCurrency) st.getItem();
+            if (curr.getValueCents() != value[i]) {
+                return false; // Item type changed, abort
+            }
+            if (st.getCount() < use[i]) {
+                return false; // Not enough items anymore, abort
+            }
+
+            // English: Safe to remove now that we've validated the inventory state matches
+            // our snapshot.
+            // Español: Seguro remover ahora que hemos validado que el estado del inventario
+            // coincide con nuestra instantánea.
+            st.shrink(use[i]);
+            if (st.getCount() <= 0)
+                list.set(index[i], ItemStack.EMPTY);
         }
         player.inventory.markDirty();
         return true;
     }
 
     /*
-     English: Give currency items to the player for the specified cents, using highest denominations first.
-     Splits into stacks of up to 64 and adds to inventory; if inventory is full, drops on the ground.
-     Español: Entrega ítems de moneda al jugador por la cantidad en centavos, usando primero las denominaciones más altas.
-     Divide en pilas de hasta 64 y las añade al inventario; si el inventario está lleno, las suelta al suelo.
-    */
+     * English: Give currency items to the player for the specified cents, using
+     * highest denominations first.
+     * Splits into stacks of up to 64 and adds to inventory; if inventory is full,
+     * drops on the ground.
+     * Español: Entrega ítems de moneda al jugador por la cantidad en centavos,
+     * usando primero las denominaciones más altas.
+     * Divide en pilas de hasta 64 y las añade al inventario; si el inventario está
+     * lleno, las suelta al suelo.
+     */
     public static void giveCurrency(EntityPlayerMP player, long amountCents) {
-        if (amountCents <= 0) return;
+        if (amountCents <= 0)
+            return;
         // Denominations in descending order
         ItemCurrency[] denoms = new ItemCurrency[] {
-            PrimeBankItems.CURRENCY_100D,
-            PrimeBankItems.CURRENCY_50D,
-            PrimeBankItems.CURRENCY_20D,
-            PrimeBankItems.CURRENCY_10D,
-            PrimeBankItems.CURRENCY_5D,
-            PrimeBankItems.CURRENCY_1D,
-            PrimeBankItems.CURRENCY_50C,
-            PrimeBankItems.CURRENCY_25C,
-            PrimeBankItems.CURRENCY_10C,
-            PrimeBankItems.CURRENCY_5C,
-            PrimeBankItems.CURRENCY_1C
+                PrimeBankItems.CURRENCY_100D,
+                PrimeBankItems.CURRENCY_50D,
+                PrimeBankItems.CURRENCY_20D,
+                PrimeBankItems.CURRENCY_10D,
+                PrimeBankItems.CURRENCY_5D,
+                PrimeBankItems.CURRENCY_1D,
+                PrimeBankItems.CURRENCY_50C,
+                PrimeBankItems.CURRENCY_25C,
+                PrimeBankItems.CURRENCY_10C,
+                PrimeBankItems.CURRENCY_5C,
+                PrimeBankItems.CURRENCY_1C
         };
         long remaining = amountCents;
         boolean gaveAny = false;
         for (ItemCurrency cur : denoms) {
-            if (cur == null) continue;
+            if (cur == null)
+                continue;
             long v = cur.getValueCents();
-            if (v <= 0) continue;
+            if (v <= 0)
+                continue;
             long units = remaining / v;
             while (units > 0) {
                 int stackCount = (int) Math.min(64, units);
@@ -156,10 +216,11 @@ public final class CashUtil {
         player.inventory.markDirty();
         if (gaveAny) {
             // English: Play item pickup sound at player's position to provide feedback.
-            // Español: Reproducir sonido de recoger ítem en la posición del jugador para dar retroalimentación.
+            // Español: Reproducir sonido de recoger ítem en la posición del jugador para
+            // dar retroalimentación.
             float pitch = 0.9F + player.world.rand.nextFloat() * 0.2F;
             player.world.playSound(null, player.posX, player.posY, player.posZ,
-                SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.25F, pitch);
+                    SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.25F, pitch);
         }
     }
 }

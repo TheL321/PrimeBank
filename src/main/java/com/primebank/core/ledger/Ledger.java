@@ -59,6 +59,17 @@ public final class Ledger {
         try {
             long centralBal = central.getBalanceCents();
             long amt = Math.min(cashbackCents, Math.max(0, centralBal));
+
+            // English: SECURITY FIX: Warn admins if central bank cannot fulfill cashback
+            // request.
+            // Español: CORRECCIÓN DE SEGURIDAD: Advertir a admins si banco central no puede
+            // cumplir solicitud de cashback.
+            if (amt < cashbackCents) {
+                com.primebank.PrimeBankMod.LOGGER.warn(
+                        "[PrimeBank] SECURITY WARNING: Central bank balance ({} cents) is insufficient for cashback request ({} cents). Only {} cents will be credited.",
+                        centralBal, cashbackCents, amt);
+            }
+
             if (amt <= 0)
                 return new OpResult(false, "central_insufficient", "Central has no funds");
             central.withdraw(amt);

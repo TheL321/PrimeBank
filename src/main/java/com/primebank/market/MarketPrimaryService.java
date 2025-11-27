@@ -91,7 +91,25 @@ public final class MarketPrimaryService {
         long pricePerShare = c.valuationCurrentCents / 101L;
         if (pricePerShare <= 0)
             return Result.error("trading_blocked");
-        long gross = pricePerShare * shares;
+        long gross;
+        try {
+            gross = Math.multiplyExact(pricePerShare, shares);
+        } catch (ArithmeticException e) {
+            return Result.error("overflow");
+        }
+
+        // English: Check majority rule violation BEFORE taking money.
+        // Español: Verificar violación de regla de mayoría ANTES de tomar el dinero.
+        String ownerKey = c.ownerUuid == null ? null : c.ownerUuid.toString();
+        if (ownerKey == null)
+            return Result.error("company_no_owner");
+        int ownerShares = c.holdings.getOrDefault(ownerKey, 0);
+        if (ownerShares < shares + 51) {
+            PrimeBankMod.LOGGER.error("[PrimeBank] Majority rule violation detected while buying {} shares from {}",
+                    shares, companyId);
+            return Result.error("majority_violation");
+        }
+
         String buyerAcc = com.primebank.core.accounts.PlayerAccounts.ensurePersonal(buyer);
         // English: Payment goes to the owner's personal account, not the company
         // account.
@@ -110,17 +128,6 @@ public final class MarketPrimaryService {
         }
         // English: Move shares from owner to buyer and reduce listed inventory.
         // Español: Mover acciones del dueño al comprador y reducir inventario listado.
-        String ownerKey = c.ownerUuid == null ? null : c.ownerUuid.toString();
-        if (ownerKey == null)
-            return Result.error("company_no_owner");
-        int ownerShares = c.holdings.getOrDefault(ownerKey, 0);
-        if (ownerShares < shares + 51) {
-            // Safety: do not violate majority; rollback funds is complex -> prevent
-            // earlier; here we just fail-fast (should not happen)
-            PrimeBankMod.LOGGER.error("[PrimeBank] Majority rule violation detected while buying {} shares from {}",
-                    shares, companyId);
-            return Result.error("majority_violation");
-        }
         c.holdings.put(ownerKey, ownerShares - shares);
         String buyerKey = buyer.toString();
         c.holdings.put(buyerKey, c.holdings.getOrDefault(buyerKey, 0) + shares);

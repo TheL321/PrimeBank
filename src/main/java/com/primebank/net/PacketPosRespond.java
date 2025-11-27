@@ -76,6 +76,16 @@ public class PacketPosRespond implements IMessage {
                     // valoración).
                     com.primebank.core.state.PrimeBankState.get().companies().addSales(message.companyId,
                             message.cents);
+
+                    // English: SECURITY FIX: Save company data immediately to prevent sales data
+                    // loss on crash.
+                    // Español: CORRECCIÓN DE SEGURIDAD: Guardar datos de empresa inmediatamente
+                    // para prevenir pérdida de ventas en crash.
+                    com.primebank.core.company.Company company = com.primebank.core.state.PrimeBankState.get()
+                            .companies().get(message.companyId);
+                    if (company != null) {
+                        com.primebank.persistence.CompanyPersistence.saveCompany(company);
+                    }
                     // English: Inform buyer with details (to merchant and central fee).
                     // Español: Informar al comprador con detalles (al comerciante y comisión al
                     // central).
