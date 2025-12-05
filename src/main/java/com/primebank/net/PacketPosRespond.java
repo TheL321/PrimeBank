@@ -55,6 +55,38 @@ public class PacketPosRespond implements IMessage {
                             "primebank.pos.result.cancelled"));
                     return;
                 }
+
+                // English: SECURITY FIX: Validate client response against server-side stored
+                // pending charge.
+                // Español: CORRECCIÓN DE SEGURIDAD: Validar respuesta del cliente contra cargo
+                // pendiente almacenado en el servidor.
+                com.primebank.core.state.PrimeBankState.PendingPosCharge expected = com.primebank.core.state.PrimeBankState
+                        .get().getPendingPosCharge(p.getUniqueID());
+
+                if (expected == null) {
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation(
+                            "primebank.pos.error.no_pending"));
+                    return;
+                }
+
+                if (!expected.companyId.equals(message.companyId)) {
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation(
+                            "primebank.pos.error.company_mismatch"));
+                    com.primebank.core.state.PrimeBankState.get().clearPendingPosCharge(p.getUniqueID());
+                    return;
+                }
+
+                if (expected.cents != message.cents) {
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation(
+                            "primebank.pos.error.amount_mismatch"));
+                    com.primebank.core.state.PrimeBankState.get().clearPendingPosCharge(p.getUniqueID());
+                    return;
+                }
+
+                // English: Clear the pending charge now that we've validated it.
+                // Español: Limpiar el cargo pendiente ahora que lo hemos validado.
+                com.primebank.core.state.PrimeBankState.get().clearPendingPosCharge(p.getUniqueID());
+
                 // English: Require company approval before allowing POS checkout.
                 // Español: Requerir aprobación de la empresa antes de permitir el cobro POS.
                 if (message.companyId == null
@@ -64,18 +96,19 @@ public class PacketPosRespond implements IMessage {
                     return;
                 }
                 // English: Ensure buyer personal account exists and perform POS charge split
-                // 95/5.
+                // 95/5. Use the server's expected amount, not the client's.
                 // Español: Asegurar cuenta personal del comprador y ejecutar el cobro POS 95/5.
+                // Usar el monto esperado del servidor, no el del cliente.
                 String buyerId = PlayerAccounts.ensurePersonal(p.getUniqueID());
                 Ledger ledger = new Ledger(PrimeBankState.get().accounts());
-                Ledger.TransferResult res = ledger.posCharge(buyerId, message.companyId, message.cents);
+                Ledger.TransferResult res = ledger.posCharge(buyerId, expected.companyId, expected.cents);
                 if (res.success) {
                     // English: Add gross sale to company's weekly sales accumulator (for
                     // valuation).
                     // Español: Agregar la venta bruta al acumulador semanal de la empresa (para
                     // valoración).
-                    com.primebank.core.state.PrimeBankState.get().companies().addSales(message.companyId,
-                            message.cents);
+                    com.primebank.core.state.PrimeBankState.get().companies().addSales(expected.companyId,
+                            expected.cents);
 
                     // English: SECURITY FIX: Save company data immediately to prevent sales data
                     // loss on crash.
@@ -89,8 +122,8 @@ public class PacketPosRespond implements IMessage {
                     // English: Inform buyer with details (to merchant and central fee).
                     // Español: Informar al comprador con detalles (al comerciante y comisión al
                     // central).
-                    long toCompany = com.primebank.core.Money.multiplyBps(message.cents, 9500);
-                    long toCentral = com.primebank.core.Money.add(message.cents, -toCompany);
+                    long toCompany = com.primebank.core.Money.multiplyBps(expected.cents, 9500);
+                    long toCentral = com.primebank.core.Money.add(expected.cents, -toCompany);
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation(
                             "primebank.pos.result.accepted.details",
                             com.primebank.core.Money.formatUsd(toCompany),
@@ -101,7 +134,7 @@ public class PacketPosRespond implements IMessage {
                     // al comprador.
                     int cbBps = com.primebank.core.state.PrimeBankState.get().getGlobalCashbackBps();
                     if (cbBps > 0) {
-                        long cashback = com.primebank.core.Money.multiplyBps(message.cents, cbBps);
+                        long cashback = com.primebank.core.Money.multiplyBps(expected.cents, cbBps);
                         Ledger.OpResult cb = ledger.applyCashbackToBuyer(buyerId, cashback);
                         if (cb.success && cashback > 0) {
                             p.sendMessage(new net.minecraft.util.text.TextComponentTranslation(
@@ -125,7 +158,7 @@ public class PacketPosRespond implements IMessage {
                             }
                             // Use NotificationHelper for consistent notification
                             com.primebank.util.NotificationHelper.notifyPosSale(p.getServerWorld().getMinecraftServer(),
-                                    p.getUniqueID(), owner, message.companyId, message.cents);
+                                    p.getUniqueID(), owner, expected.companyId, expected.cents);
                         }
                     } catch (Exception ignored) {
                     }
@@ -135,7 +168,7 @@ public class PacketPosRespond implements IMessage {
                     // Español: Opcionalmente limpiar el monto POS pendiente de la empresa tras una
                     // venta exitosa.
                     if (com.primebank.core.config.PrimeBankConfig.POS_AUTOCLEAR_PENDING_AFTER_SALE) {
-                        com.primebank.core.state.PrimeBankState.get().clearPendingCharge(message.companyId);
+                        com.primebank.core.state.PrimeBankState.get().clearPendingCharge(expected.companyId);
                         com.primebank.persistence.BankPersistence.saveAllAsync();
                     }
                 } else {

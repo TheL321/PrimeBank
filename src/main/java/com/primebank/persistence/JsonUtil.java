@@ -19,12 +19,15 @@ import com.google.gson.GsonBuilder;
 public final class JsonUtil {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    private JsonUtil() {}
+    private JsonUtil() {
+    }
 
     public static <T> T read(File file, Class<T> type) {
         try {
-            if (file == null || !file.exists()) return null;
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+            if (file == null || !file.exists())
+                return null;
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
                 return GSON.fromJson(br, type);
             }
         } catch (Exception e) {
@@ -35,11 +38,28 @@ public final class JsonUtil {
     public static void write(File file, Object obj) {
         try {
             file.getParentFile().mkdirs();
-            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+            try (BufferedWriter bw = new BufferedWriter(
+                    new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
                 GSON.toJson(obj, bw);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to write JSON / Falló la escritura de JSON: " + file, e);
+        }
+    }
+
+    public static String toJson(Object obj) {
+        return GSON.toJson(obj);
+    }
+
+    public static void writeString(File file, String content) {
+        try {
+            file.getParentFile().mkdirs();
+            try (BufferedWriter bw = new BufferedWriter(
+                    new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+                bw.write(content);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to write string / Falló la escritura de cadena: " + file, e);
         }
     }
 }

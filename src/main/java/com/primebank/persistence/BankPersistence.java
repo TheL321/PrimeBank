@@ -110,11 +110,20 @@ public class BankPersistence {
         // requisitos, solo iteraremos.
         for (Account a : PrimeBankState.get().accounts().all()) {
             AccountRecord r = new AccountRecord();
-            r.id = a.getId();
-            r.type = a.getType().name();
-            r.ownerUuid = a.getOwnerUuid() == null ? null : a.getOwnerUuid().toString();
-            r.balanceCents = a.getBalanceCents();
-            r.history = new ArrayList<>(a.getHistory());
+            // English: Acquire lock to prevent torn reads (inconsistent state).
+            // Español: Adquirir bloqueo para evitar lecturas inconsistentes.
+            java.util.concurrent.locks.ReentrantLock lock = com.primebank.core.locks.AccountLockManager
+                    .getLock(a.getId());
+            lock.lock();
+            try {
+                r.id = a.getId();
+                r.type = a.getType().name();
+                r.ownerUuid = a.getOwnerUuid() == null ? null : a.getOwnerUuid().toString();
+                r.balanceCents = a.getBalanceCents();
+                r.history = new ArrayList<>(a.getHistory());
+            } finally {
+                lock.unlock();
+            }
             snap.accounts.add(r);
         }
 

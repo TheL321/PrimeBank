@@ -12,16 +12,21 @@ import com.primebank.core.state.PrimeBankState;
  Español: Persistencia para objetos Company bajo world/primebank/companies/.
 */
 public final class CompanyPersistence {
-    private CompanyPersistence() {}
+    private CompanyPersistence() {
+    }
 
-    private static File dir() { return new File(PersistencePaths.base(), "companies"); }
+    private static File dir() {
+        return new File(PersistencePaths.base(), "companies");
+    }
 
     public static void loadAll() {
         try {
             File d = dir();
-            if (!d.exists()) return;
+            if (!d.exists())
+                return;
             File[] files = d.listFiles((f, n) -> n.endsWith(".json"));
-            if (files == null) return;
+            if (files == null)
+                return;
             int n = 0;
             for (File f : files) {
                 Company c = JsonUtil.read(f, Company.class);
@@ -30,9 +35,10 @@ public final class CompanyPersistence {
                         c.valuationHistoryCents = new java.util.ArrayList<>();
                     } else if (c.valuationHistoryCents.size() > 26) {
                         /*
-                         English: Trim valuation history to last 26 entries to honor UI graph cap.
-                         Español: Recortar el historial de valoraciones a las últimas 26 entradas para respetar el límite de la UI.
-                        */
+                         * English: Trim valuation history to last 26 entries to honor UI graph cap.
+                         * Español: Recortar el historial de valoraciones a las últimas 26 entradas para
+                         * respetar el límite de la UI.
+                         */
                         int excess = c.valuationHistoryCents.size() - 26;
                         for (int i = 0; i < excess; i++) {
                             c.valuationHistoryCents.remove(0);
@@ -40,11 +46,13 @@ public final class CompanyPersistence {
                     }
                     if (c.salesLast7DaysCents == null) {
                         // English: Ensure rolling sales window is available to avoid NPEs.
-                        // Español: Asegurar que la ventana rodante de ventas esté disponible para evitar NPEs.
+                        // Español: Asegurar que la ventana rodante de ventas esté disponible para
+                        // evitar NPEs.
                         c.salesLast7DaysCents = new java.util.ArrayList<>();
                     } else if (c.salesLast7DaysCents.size() > 7) {
                         // English: Trim rolling sales history to last 7 days for valuation.
-                        // Español: Recortar el historial rodante de ventas a los últimos 7 días para la valoración.
+                        // Español: Recortar el historial rodante de ventas a los últimos 7 días para la
+                        // valoración.
                         int excessDays = c.salesLast7DaysCents.size() - 7;
                         for (int i = 0; i < excessDays; i++) {
                             c.salesLast7DaysCents.remove(0);
@@ -58,31 +66,41 @@ public final class CompanyPersistence {
                         }
                     }
                     // English: Normalize possible old/edited JSON to avoid wiping valuations.
-                    // Español: Normalizar posibles JSON antiguos/editados para evitar borrar valoraciones.
+                    // Español: Normalizar posibles JSON antiguos/editados para evitar borrar
+                    // valoraciones.
                     for (int i = 0; i < c.valuationHistoryCents.size(); i++) {
                         Long v = c.valuationHistoryCents.get(i);
-                        if (v == null || v.longValue() < 0L) c.valuationHistoryCents.set(i, 0L);
+                        if (v == null || v.longValue() < 0L)
+                            c.valuationHistoryCents.set(i, 0L);
                     }
                     if (!c.valuationHistoryCents.isEmpty()) {
                         long lastVal = c.valuationHistoryCents.get(c.valuationHistoryCents.size() - 1);
                         if (c.valuationCurrentCents <= 0L && lastVal > 0L) {
                             // English: Restore current valuation from last history point if missing.
-                            // Español: Restaurar valoración actual desde el último punto del historial si falta.
+                            // Español: Restaurar valoración actual desde el último punto del historial si
+                            // falta.
                             c.valuationCurrentCents = lastVal;
                         }
-                        // English: Fix invalid lastValuationAt (<=0 or before approvedAt) to prevent catch-up loop bug.
-                        // Español: Reparar lastValuationAt inválido (<=0 o antes de approvedAt) para prevenir bug de catch-up.
+                        // English: Fix invalid lastValuationAt (<=0 or before approvedAt) to prevent
+                        // catch-up loop bug.
+                        // Español: Reparar lastValuationAt inválido (<=0 o antes de approvedAt) para
+                        // prevenir bug de catch-up.
                         if (c.approvedAt > 0L && (c.lastValuationAt <= 0L || c.lastValuationAt < c.approvedAt)) {
-                            // English: Approximate last valuation timestamp from approvedAt and history length.
-                            // Español: Aproximar la marca de tiempo de la última valoración desde approvedAt y longitud del historial.
+                            // English: Approximate last valuation timestamp from approvedAt and history
+                            // length.
+                            // Español: Aproximar la marca de tiempo de la última valoración desde
+                            // approvedAt y longitud del historial.
                             long DAY_MS = 24L * 60L * 60L * 1000L;
                             int histCount = c.valuationHistoryCents.size();
-                            c.lastValuationAt = c.approvedAt + 8L * DAY_MS + (long) Math.max(0, histCount - 1) * 7L * DAY_MS;
+                            c.lastValuationAt = c.approvedAt + 8L * DAY_MS
+                                    + (long) Math.max(0, histCount - 1) * 7L * DAY_MS;
                         }
                     }
                     PrimeBankState.get().companies().put(c);
-                    // English: If there's a stored company name and no display mapping yet, set it so UIs (POS) show it.
-                    // Español: Si hay nombre almacenado y no hay mapeo visible aún, establecerlo para que las UIs (POS) lo muestren.
+                    // English: If there's a stored company name and no display mapping yet, set it
+                    // so UIs (POS) show it.
+                    // Español: Si hay nombre almacenado y no hay mapeo visible aún, establecerlo
+                    // para que las UIs (POS) lo muestren.
                     if (c.name != null && !c.name.trim().isEmpty()) {
                         String existing = PrimeBankState.get().getCompanyName(c.id);
                         if (existing == null || existing.trim().isEmpty()) {
@@ -104,7 +122,15 @@ public final class CompanyPersistence {
     public static void saveCompany(Company c) {
         try {
             File f = new File(dir(), sanitize(c.id) + ".json");
-            JsonUtil.write(f, c);
+            String json;
+            // English: Synchronize serialization to prevent torn reads.
+            // Español: Sincronizar serialización para evitar lecturas inconsistentes.
+            synchronized (c) {
+                json = JsonUtil.toJson(c);
+            }
+            // English: Write to disk outside the lock to minimize contention.
+            // Español: Escribir en disco fuera del bloqueo para minimizar contención.
+            JsonUtil.writeString(f, json);
         } catch (Exception ex) {
             PrimeBankMod.LOGGER.error("[PrimeBank] Failed to save company {}", c.id, ex);
         }

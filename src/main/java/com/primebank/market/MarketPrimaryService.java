@@ -51,13 +51,20 @@ public final class MarketPrimaryService {
             return Result.error("not_owner");
         if (c.valuationCurrentCents <= 0)
             return Result.error("trading_blocked");
-        int ownerShares = c.holdings.getOrDefault(owner.toString(), 0);
-        int maxListable = Math.min(50, Math.max(0, ownerShares - 51));
-        if (shares > maxListable)
-            return Result.error("over_limit");
-        if (c.listedShares + shares > 50)
-            return Result.error("over_slot");
-        c.listedShares += shares;
+
+        // English: Synchronize on company to prevent race conditions when checking and
+        // modifying share counts.
+        // Español: Sincronizar en la empresa para prevenir condiciones de carrera al
+        // verificar y modificar conteos de acciones.
+        synchronized (c) {
+            int ownerShares = c.holdings.getOrDefault(owner.toString(), 0);
+            int maxListable = Math.min(50, Math.max(0, ownerShares - 51));
+            if (shares > maxListable)
+                return Result.error("over_limit");
+            if (c.listedShares + shares > 50)
+                return Result.error("over_slot");
+            c.listedShares += shares;
+        }
         CompanyPersistence.saveCompany(c);
         PrimeBankMod.LOGGER.info("[PrimeBank] Listed {} shares for {}", shares, companyId);
         return Result.ok();
@@ -103,36 +110,47 @@ public final class MarketPrimaryService {
         String ownerKey = c.ownerUuid == null ? null : c.ownerUuid.toString();
         if (ownerKey == null)
             return Result.error("company_no_owner");
-        int ownerShares = c.holdings.getOrDefault(ownerKey, 0);
-        if (ownerShares < shares + 51) {
-            PrimeBankMod.LOGGER.error("[PrimeBank] Majority rule violation detected while buying {} shares from {}",
-                    shares, companyId);
-            return Result.error("majority_violation");
-        }
 
-        String buyerAcc = com.primebank.core.accounts.PlayerAccounts.ensurePersonal(buyer);
-        // English: Payment goes to the owner's personal account, not the company
-        // account.
-        // Español: El pago va a la cuenta personal del dueño, no a la cuenta de la
-        // empresa.
-        String sellerAcc = com.primebank.core.accounts.PlayerAccounts.ensurePersonal(c.ownerUuid);
-        Ledger ledger = new Ledger(PrimeBankState.get().accounts());
-        Ledger.TransferResult tr = ledger.marketPrimaryBuy(buyerAcc, sellerAcc, gross, BUYER_FEE_BPS, ISSUER_FEE_BPS);
-        if (!tr.success) {
-            // English: Check result code for insufficient funds per Ledger.TransferResult.
-            // Español: Verificar el código de resultado para fondos insuficientes según
-            // Ledger.TransferResult.
-            if ("insufficient".equals(tr.code))
-                return Result.error("insufficient");
-            return Result.error("ledger_error");
+        // English: Synchronize on company to prevent race conditions on listedShares
+        // and holdings.
+        // Español: Sincronizar en la empresa para prevenir condiciones de carrera en
+        // listedShares y holdings.
+        synchronized (c) {
+            if (c.listedShares < shares)
+                return Result.error("not_enough_listed");
+
+            int ownerShares = c.holdings.getOrDefault(ownerKey, 0);
+            if (ownerShares < shares + 51) {
+                PrimeBankMod.LOGGER.error("[PrimeBank] Majority rule violation detected while buying {} shares from {}",
+                        shares, companyId);
+                return Result.error("majority_violation");
+            }
+
+            String buyerAcc = com.primebank.core.accounts.PlayerAccounts.ensurePersonal(buyer);
+            // English: Payment goes to the owner's personal account, not the company
+            // account.
+            // Español: El pago va a la cuenta personal del dueño, no a la cuenta de la
+            // empresa.
+            String sellerAcc = com.primebank.core.accounts.PlayerAccounts.ensurePersonal(c.ownerUuid);
+            Ledger ledger = new Ledger(PrimeBankState.get().accounts());
+            Ledger.TransferResult tr = ledger.marketPrimaryBuy(buyerAcc, sellerAcc, gross, BUYER_FEE_BPS,
+                    ISSUER_FEE_BPS);
+            if (!tr.success) {
+                // English: Check result code for insufficient funds per Ledger.TransferResult.
+                // Español: Verificar el código de resultado para fondos insuficientes según
+                // Ledger.TransferResult.
+                if ("insufficient".equals(tr.code))
+                    return Result.error("insufficient");
+                return Result.error("ledger_error");
+            }
+            // English: Move shares from owner to buyer and reduce listed inventory.
+            // Español: Mover acciones del dueño al comprador y reducir inventario listado.
+            c.holdings.put(ownerKey, ownerShares - shares);
+            String buyerKey = buyer.toString();
+            c.holdings.put(buyerKey, c.holdings.getOrDefault(buyerKey, 0) + shares);
+            c.listedShares -= shares;
+            CompanyPersistence.saveCompany(c);
         }
-        // English: Move shares from owner to buyer and reduce listed inventory.
-        // Español: Mover acciones del dueño al comprador y reducir inventario listado.
-        c.holdings.put(ownerKey, ownerShares - shares);
-        String buyerKey = buyer.toString();
-        c.holdings.put(buyerKey, c.holdings.getOrDefault(buyerKey, 0) + shares);
-        c.listedShares -= shares;
-        CompanyPersistence.saveCompany(c);
 
         // Notify seller
         com.primebank.util.NotificationHelper.notifyMarketSale(server, buyer, c.ownerUuid,

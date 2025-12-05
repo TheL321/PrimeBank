@@ -18,14 +18,28 @@ import com.primebank.content.blocks.TilePosPrimeBank;
 public class PacketPosChargeInitiate implements IMessage {
     private int x, y, z;
 
-    public PacketPosChargeInitiate() {}
-    public PacketPosChargeInitiate(BlockPos pos) { this.x = pos.getX(); this.y = pos.getY(); this.z = pos.getZ(); }
+    public PacketPosChargeInitiate() {
+    }
+
+    public PacketPosChargeInitiate(BlockPos pos) {
+        this.x = pos.getX();
+        this.y = pos.getY();
+        this.z = pos.getZ();
+    }
 
     @Override
-    public void fromBytes(ByteBuf buf) { this.x = buf.readInt(); this.y = buf.readInt(); this.z = buf.readInt(); }
+    public void fromBytes(ByteBuf buf) {
+        this.x = buf.readInt();
+        this.y = buf.readInt();
+        this.z = buf.readInt();
+    }
 
     @Override
-    public void toBytes(ByteBuf buf) { buf.writeInt(this.x); buf.writeInt(this.y); buf.writeInt(this.z); }
+    public void toBytes(ByteBuf buf) {
+        buf.writeInt(this.x);
+        buf.writeInt(this.y);
+        buf.writeInt(this.z);
+    }
 
     public static class Handler implements IMessageHandler<PacketPosChargeInitiate, IMessage> {
         @Override
@@ -35,31 +49,40 @@ public class PacketPosChargeInitiate implements IMessage {
                 EntityPlayerMP p = ctx.getServerHandler().player;
                 BlockPos pos = new BlockPos(message.x, message.y, message.z);
                 net.minecraft.tileentity.TileEntity te = p.world.getTileEntity(pos);
-                if (!(te instanceof TilePosPrimeBank)) return;
+                if (!(te instanceof TilePosPrimeBank))
+                    return;
                 TilePosPrimeBank t = (TilePosPrimeBank) te;
                 String companyId = t.companyId;
                 if (companyId == null) {
-                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.not_linked"));
+                    p.sendMessage(
+                            new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.not_linked"));
                     return;
                 }
-                // English: Determine charge amount with precedence: per-POS price > global company pending.
-                // Español: Determinar el monto con prioridad: precio por POS > pendiente global de la empresa.
+                // English: Determine charge amount with precedence: per-POS price > global
+                // company pending.
+                // Español: Determinar el monto con prioridad: precio por POS > pendiente global
+                // de la empresa.
                 long cents = t.pendingCents;
                 if (cents <= 0) {
                     long global = com.primebank.core.state.PrimeBankState.get().getPendingCharge(companyId);
                     cents = global;
                 }
                 if (cents <= 0) {
-                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.no_pending"));
+                    p.sendMessage(
+                            new net.minecraft.util.text.TextComponentTranslation("primebank.pos.error.no_pending"));
                     return;
                 }
-                // English: Enforce buyer holds a PrimeBank Card and is the owner. If owner is unset, set it to buyer.
-                // Español: Exigir que el comprador sostenga una Tarjeta PrimeBank y sea el dueño. Si no tiene dueño, asignarlo al comprador.
+                // English: Enforce buyer holds a PrimeBank Card and is the owner. If owner is
+                // unset, set it to buyer.
+                // Español: Exigir que el comprador sostenga una Tarjeta PrimeBank y sea el
+                // dueño. Si no tiene dueño, asignarlo al comprador.
                 net.minecraft.item.ItemStack main = p.getHeldItemMainhand();
                 net.minecraft.item.ItemStack off = p.getHeldItemOffhand();
                 net.minecraft.item.ItemStack card = null;
-                if (main != null && main.getItem() instanceof com.primebank.content.items.ItemCard) card = main;
-                else if (off != null && off.getItem() instanceof com.primebank.content.items.ItemCard) card = off;
+                if (main != null && main.getItem() instanceof com.primebank.content.items.ItemCard)
+                    card = main;
+                else if (off != null && off.getItem() instanceof com.primebank.content.items.ItemCard)
+                    card = off;
                 if (card == null) {
                     p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.card.required"));
                     return;
@@ -67,36 +90,52 @@ public class PacketPosChargeInitiate implements IMessage {
                 java.util.UUID owner = com.primebank.content.items.ItemCard.getOwnerUUID(card);
                 if (owner == null) {
                     com.primebank.content.items.ItemCard.setOwnerUUID(card, p.getUniqueID());
-                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.card.owner.set", p.getName()));
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.card.owner.set",
+                            p.getName()));
                 } else if (!owner.equals(p.getUniqueID())) {
-                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.card.owner.mismatch"));
+                    p.sendMessage(
+                            new net.minecraft.util.text.TextComponentTranslation("primebank.card.owner.mismatch"));
                     return;
                 }
-                // English: Send S2C prompt with amount and a friendly merchant label (display name > owner username > raw id).
-                // Español: Enviar aviso S2C con monto y una etiqueta amigable del comerciante (nombre visible > usuario dueño > id crudo).
+                // English: Send S2C prompt with amount and a friendly merchant label (display
+                // name > owner username > raw id).
+                // Español: Enviar aviso S2C con monto y una etiqueta amigable del comerciante
+                // (nombre visible > usuario dueño > id crudo).
                 String disp = com.primebank.core.state.PrimeBankState.get().getCompanyName(companyId);
                 if (disp == null || disp.isEmpty()) {
                     if (companyId.startsWith("c:")) {
                         try {
                             String raw = companyId.substring(2);
                             java.util.UUID companyOwner = java.util.UUID.fromString(raw);
-                            net.minecraft.entity.player.EntityPlayerMP merchant = p.getServerWorld().getMinecraftServer().getPlayerList().getPlayerByUUID(companyOwner);
+                            net.minecraft.entity.player.EntityPlayerMP merchant = p.getServerWorld()
+                                    .getMinecraftServer().getPlayerList().getPlayerByUUID(companyOwner);
                             if (merchant != null) {
                                 disp = merchant.getName();
                             } else {
-                                com.mojang.authlib.GameProfile gp = p.getServerWorld().getMinecraftServer().getPlayerProfileCache().getProfileByUUID(companyOwner);
-                                if (gp != null && gp.getName() != null) disp = gp.getName();
+                                com.mojang.authlib.GameProfile gp = p.getServerWorld().getMinecraftServer()
+                                        .getPlayerProfileCache().getProfileByUUID(companyOwner);
+                                if (gp != null && gp.getName() != null)
+                                    disp = gp.getName();
                             }
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }
-                    if (disp == null || disp.isEmpty()) disp = companyId;
+                    if (disp == null || disp.isEmpty())
+                        disp = companyId;
                 }
-                // English: Append ticker to the merchant label when available (e.g., "Name (TICKER)").
-                // Español: Añadir el ticker a la etiqueta del comerciante cuando esté disponible (ej.: "Nombre (TICKER)").
+                // English: Append ticker to the merchant label when available (e.g., "Name
+                // (TICKER)").
+                // Español: Añadir el ticker a la etiqueta del comerciante cuando esté
+                // disponible (ej.: "Nombre (TICKER)").
                 String ticker = com.primebank.core.state.PrimeBankState.get().getCompanyShortName(companyId);
                 if (ticker != null && !ticker.trim().isEmpty()) {
                     disp = String.format("%s (%s)", disp, ticker.trim());
                 }
+                // English: SECURITY FIX: Store the pending charge server-side before sending to
+                // client.
+                // Español: CORRECCIÓN DE SEGURIDAD: Almacenar el cargo pendiente del lado del
+                // servidor antes de enviar al cliente.
+                com.primebank.core.state.PrimeBankState.get().setPendingPosCharge(p.getUniqueID(), companyId, cents);
                 com.primebank.PrimeBankMod.NETWORK.sendTo(new PacketPosPrompt(cents, companyId, disp), p);
             });
             return null;
