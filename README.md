@@ -51,7 +51,7 @@ To build PrimeBank from the source code:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/YourUsername/PrimeBank.git
+   git clone https://github.com/TheL321/PrimeBank.git
    cd PrimeBank
    ```
 
