@@ -649,6 +649,123 @@ public class CommandPrimeBank extends CommandBase {
                 }
                 break;
             }
+            case "apistress": {
+                if (!com.primebank.core.admin.AdminService.isAdmin(me, server, sender)) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.admin.not_admin"));
+                    break;
+                }
+                if (args.length < 3) {
+                    sender.sendMessage(
+                            new TextComponentString("Usage: /pb apistress <mode> <count>. Modes: 1=churn, 2=transfer"));
+                    break;
+                }
+                int mode = Integer.parseInt(args[1]);
+                int count = Integer.parseInt(args[2]);
+
+                final com.primebank.api.PrimeBankAPI api = com.primebank.api.PrimeBankAPI.getInstance();
+                final UUID u1 = me;
+
+                sender.sendMessage(new TextComponentString(
+                        "Starting API Stress Test Mode " + mode + " with " + count + " cycles..."));
+
+                if (mode == 1) {
+                    // Churn: Deposit 100, Withdraw 100 concurrently
+                    long initial = api.getBalance(u1);
+                    java.util.concurrent.atomic.AtomicInteger errors = new java.util.concurrent.atomic.AtomicInteger(0);
+
+                    Thread t1 = new Thread(() -> {
+                        for (int i = 0; i < count; i++) {
+                            if (api.deposit(u1, 100, "StressTest", "Churn+")
+                                    .equals(com.primebank.api.PrimeBankResult.SUCCESS) == false)
+                                errors.incrementAndGet();
+                        }
+                    });
+                    Thread t2 = new Thread(() -> {
+                        for (int i = 0; i < count; i++) {
+                            // Retry logic for withdraw if insufficient funds happens due to race (shouldn't
+                            // if started with buffer, but we might hit transient state if withdraw beats
+                            // deposit)
+                            // Actually, 100 cents is small. Let's assume player has some balance.
+                            // To be safe, we loop until success or limit? No, just try.
+                            // If we want net zero change, every successful deposit must be matched by a
+                            // withdraw.
+                            // Implementing simplistic: we assume starting balance is sufficient to cover
+                            // transient dips or we tolerate failures but count matches.
+                            // Better: Just verify consistency.
+                            api.withdraw(u1, 100, "StressTest", "Churn-");
+                        }
+                    });
+                    t1.start();
+                    t2.start();
+
+                    new Thread(() -> {
+                        try {
+                            t1.join();
+                            t2.join();
+                            long fin = api.getBalance(u1);
+                            long diff = fin - initial;
+                            sender.sendMessage(new TextComponentString("Stress Test Finished."));
+                            sender.sendMessage(new TextComponentString(
+                                    "Initial: " + initial + ", Final: " + fin + ", Diff: " + diff));
+                            sender.sendMessage(new TextComponentString("Deposit Failures: " + errors.get()));
+                            if (diff == 0)
+                                sender.sendMessage(new TextComponentString("SUCCESS: Balance conserved."));
+                            else
+                                sender.sendMessage(new TextComponentString("FAILURE: Balance leaked!"));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
+                } else if (mode == 2) {
+                    // Deadlock test: Mutual transfers
+                    // Need a second user. We'll use Central Bank as second user if we can resolve
+                    // its UUID?
+                    // Central account is special, has no UUID.
+                    // We need another UUID. Let's make a dummy one.
+                    UUID u2 = UUID.randomUUID();
+                    // Ensure u2 exists and has funds
+                    api.deposit(u2, 1000000, "Setup", "StressTest");
+                    api.deposit(u1, 1000000, "Setup", "StressTest");
+
+                    long start1 = api.getBalance(u1);
+                    long start2 = api.getBalance(u2);
+
+                    Thread tA = new Thread(() -> {
+                        for (int i = 0; i < count; i++) {
+                            api.transfer(u1, u2, 10, "Stress", "A->B");
+                        }
+                    });
+                    Thread tB = new Thread(() -> {
+                        for (int i = 0; i < count; i++) {
+                            api.transfer(u2, u1, 10, "Stress", "B->A");
+                        }
+                    });
+                    tA.start();
+                    tB.start();
+
+                    new Thread(() -> {
+                        try {
+                            tA.join();
+                            tB.join();
+                            long end1 = api.getBalance(u1);
+                            long end2 = api.getBalance(u2);
+                            long totalStart = start1 + start2;
+                            long totalEnd = end1 + end2;
+
+                            sender.sendMessage(new TextComponentString("Deadlock Test Finished."));
+                            sender.sendMessage(
+                                    new TextComponentString("Total Start: " + totalStart + ", Total End: " + totalEnd));
+                            if (totalStart == totalEnd)
+                                sender.sendMessage(new TextComponentString("SUCCESS: Mass conserved."));
+                            else
+                                sender.sendMessage(new TextComponentString("FAILURE: Mass changed!"));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
+                }
+                break;
+            }
             default:
                 sender.sendMessage(new TextComponentTranslation("primebank.unknown_subcommand"));
         }
