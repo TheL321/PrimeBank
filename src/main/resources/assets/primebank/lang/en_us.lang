@@ -119,6 +119,7 @@ primebank.admin.not_admin=You are not an admin
 primebank.admin.company.approved=Company approved: %s
 primebank.admin.company.not_found=Company not found
 primebank.admin.cashback.set=Global cashback set to %s bps
+primebank.admin.cashback.disabled=Cashback is currently disabled via config; BPS changes are inert
 primebank.admin.central.balance=Central Bank Balance: %s
 primebank.admin.central.withdraw=Central withdraw: %s
 primebank.admin.central.withdraw.ok=Withdrawn %s from Central Bank

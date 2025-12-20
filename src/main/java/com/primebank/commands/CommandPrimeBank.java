@@ -521,6 +521,11 @@ public class CommandPrimeBank extends CommandBase {
                 com.primebank.core.state.PrimeBankState.get().setGlobalCashbackBps(bps);
                 BankPersistence.saveAllAsync();
                 sender.sendMessage(new TextComponentTranslation("primebank.admin.cashback.set", bps));
+                if (!com.primebank.core.config.PrimeBankConfig.CASHBACK_ENABLED) {
+                    // English: Inform admin that cashback is disabled by config even though BPS changed.
+                    // Español: Informar al admin que el cashback está deshabilitado por configuración aunque se cambie el BPS.
+                    sender.sendMessage(new TextComponentTranslation("primebank.admin.cashback.disabled"));
+                }
                 break;
             }
             case "marketlist": {

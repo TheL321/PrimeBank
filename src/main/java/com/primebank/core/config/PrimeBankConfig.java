@@ -20,6 +20,14 @@ public final class PrimeBankConfig {
      */
     public static final boolean POS_AUTOCLEAR_PENDING_AFTER_SALE = false;
 
+    /*
+     * English: Master switch for cashback feature; when false, cashback is globally
+     * disabled regardless of BPS.
+     * Español: Interruptor maestro para la función de cashback; cuando es falso, el
+     * cashback queda deshabilitado sin importar los BPS.
+     */
+    public static boolean CASHBACK_ENABLED = true;
+
     public static final double LOANS_DEFAULT_APR = 0.12;
     public static final int LOANS_DOWNPAYMENT_DEFAULT_BPS = 2000;
     public static final int LOANS_DOWNPAYMENT_MIN_BPS = 0;
@@ -59,6 +67,25 @@ public final class PrimeBankConfig {
                             }
                             if (!val.isEmpty()) {
                                 DISCORD_WEBHOOK_URL = val;
+                            }
+                        }
+                    } else if (line.startsWith("cashback_enabled")) {
+                        // English: Parse cashback toggle from config (accepts true/false, 1/0).
+                        // Español: Parsear el interruptor de cashback desde la config (acepta true/false, 1/0).
+                        int eq = line.indexOf('=');
+                        if (eq > 0) {
+                            String val = line.substring(eq + 1).trim();
+                            if (val.startsWith("\"") && val.endsWith("\"")) {
+                                val = val.substring(1, val.length() - 1);
+                            }
+                            if (!val.isEmpty()) {
+                                if ("1".equals(val)) {
+                                    CASHBACK_ENABLED = true;
+                                } else if ("0".equals(val)) {
+                                    CASHBACK_ENABLED = false;
+                                } else {
+                                    CASHBACK_ENABLED = Boolean.parseBoolean(val);
+                                }
                             }
                         }
                     }

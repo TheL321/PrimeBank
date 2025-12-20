@@ -83,6 +83,11 @@ public class PrimeBankMod {
         */
         File worldDir = event.getServer().getEntityWorld().getSaveHandler().getWorldDirectory();
         PersistencePaths.setWorldDir(worldDir);
+        /*
+         * English: Load server-side config (cashback toggle, webhook, etc.) relative to the data directory.
+         * Español: Cargar la configuración del lado del servidor (interruptor de cashback, webhook, etc.) con base en el directorio de datos.
+         */
+        PrimeBankConfig.load(event.getServer().getDataDirectory());
         // English: Reset in-memory state to avoid cross-world leakage before loading this world's data.
         // Español: Reiniciar el estado en memoria para evitar fugas entre mundos antes de cargar los datos de este mundo.
         com.primebank.core.state.PrimeBankState.get().resetForNewWorld();

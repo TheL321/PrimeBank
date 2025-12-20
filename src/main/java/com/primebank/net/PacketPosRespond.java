@@ -133,7 +133,8 @@ public class PacketPosRespond implements IMessage {
                     // Español: Aplicar cashback global si está configurado, pagado desde el central
                     // al comprador.
                     int cbBps = com.primebank.core.state.PrimeBankState.get().getGlobalCashbackBps();
-                    if (cbBps > 0) {
+                    boolean cashbackEnabled = com.primebank.core.config.PrimeBankConfig.CASHBACK_ENABLED;
+                    if (cashbackEnabled && cbBps > 0) {
                         long cashback = com.primebank.core.Money.multiplyBps(expected.cents, cbBps);
                         Ledger.OpResult cb = ledger.applyCashbackToBuyer(buyerId, cashback);
                         if (cb.success && cashback > 0) {
