@@ -129,10 +129,10 @@ public final class PrimeBankState {
     public void setCompanyName(String companyId, String name) {
         if (companyId == null)
             return;
-        if (name == null || name.trim().isEmpty())
-            companyNames.remove(companyId);
-        else
-            companyNames.put(companyId, name.trim());
+        String trimmed = name == null ? "" : name.trim();
+        if (trimmed.isEmpty())
+            return; // English: Do not allow clearing names; keep existing. / Español: No permitir limpiar nombres; mantener el existente.
+        companyNames.put(companyId, trimmed);
     }
 
     public String getCompanyName(String companyId) {
@@ -157,29 +157,23 @@ public final class PrimeBankState {
     public synchronized void setCompanyShortName(String companyId, String shortName) {
         if (companyId == null)
             return;
-        String previous = companyShortNames.remove(companyId);
+        String sanitized = shortName == null ? "" : shortName.trim();
+        // English: Keep ticker to a single alphanumeric word and uppercase it.
+        // Español: Mantener el ticker como una sola palabra alfanumérica y en mayúsculas.
+        sanitized = sanitized.replaceAll("[^A-Za-z0-9]", "");
+        if (sanitized.isEmpty()) {
+            return; // English: Do not allow clearing tickers; ignore empty values. / Español: No permitir limpiar tickers; ignorar valores vacíos.
+        }
+        sanitized = sanitized.toUpperCase(Locale.ROOT);
+
+        String previous = companyShortNames.get(companyId);
         if (previous != null) {
             String owner = companyShortToId.get(previous);
             if (owner != null && owner.equals(companyId)) {
                 companyShortToId.remove(previous);
             }
-            Company self = companies().get(companyId);
-            if (self != null && previous.equalsIgnoreCase(self.shortName == null ? "" : self.shortName)) {
-                self.shortName = null;
-            }
         }
-        if (shortName == null) {
-            return;
-        }
-        String sanitized = shortName.trim();
-        // English: Keep ticker to a single alphanumeric word and uppercase it.
-        // Español: Mantener el ticker como una sola palabra alfanumérica y en
-        // mayúsculas.
-        sanitized = sanitized.replaceAll("[^A-Za-z0-9]", "");
-        if (sanitized.isEmpty()) {
-            return;
-        }
-        sanitized = sanitized.toUpperCase(Locale.ROOT);
+
         String other = companyShortToId.put(sanitized, companyId);
         if (other != null && !other.equals(companyId)) {
             companyShortNames.remove(other);

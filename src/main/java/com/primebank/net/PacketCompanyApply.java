@@ -50,6 +50,18 @@ public class PacketCompanyApply implements IMessage {
                 EntityPlayerMP p = ctx.getServerHandler().player;
                 java.util.UUID owner = p.getUniqueID();
                 com.primebank.core.company.CompanyRegistry reg = PrimeBankState.get().companies();
+                // English: Validate mandatory name and ticker to prevent clearing or empty submissions.
+                // Español: Validar nombre y ticker obligatorios para evitar limpiezas o envíos vacíos.
+                String nameTrimmed = message.name == null ? "" : message.name.trim();
+                String tickerSanitized = message.shortName == null ? "" : message.shortName.trim().replaceAll("[^A-Za-z0-9]", "").toUpperCase(java.util.Locale.ROOT);
+                if (nameTrimmed.isEmpty()) {
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.company.apply.bad_name"));
+                    return;
+                }
+                if (tickerSanitized.length() < 2 || tickerSanitized.length() > 8) {
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.company.apply.bad_short"));
+                    return;
+                }
                 // English: Use the default company for the first application; create a new unique ID for subsequent applications.
                 // Español: Usar la empresa por defecto para la primera solicitud; crear un ID único para solicitudes posteriores.
                 String defaultId = com.primebank.core.accounts.CompanyAccounts.defaultCompanyId(owner);
@@ -65,9 +77,9 @@ public class PacketCompanyApply implements IMessage {
                 if (!PrimeBankState.get().accounts().exists(c.id)) {
                     PrimeBankState.get().accounts().create(c.id, com.primebank.core.accounts.AccountType.COMPANY, owner, 0L);
                 }
-                c.name = message.name == null ? null : message.name.trim();
+                c.name = nameTrimmed;
                 c.description = message.desc == null ? null : message.desc.trim();
-                c.shortName = message.shortName == null ? null : message.shortName.trim();
+                c.shortName = tickerSanitized;
                 c.appliedAt = System.currentTimeMillis();
                 c.approved = false;
                 // English: Update display name mapping so POS and UIs show it immediately.

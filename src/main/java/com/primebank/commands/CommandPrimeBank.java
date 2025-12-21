@@ -128,10 +128,8 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "setcompanyname": {
-                // English: Set or clear the display name for an owned company. Supports selecting
-                // a specific company when a player owns multiple companies.
-                // Español: Establecer o limpiar el nombre visible para una empresa propia. Soporta
-                // seleccionar una empresa específica cuando el jugador tiene múltiples empresas.
+                // English: Set the display name for an owned company. Supports selecting a specific company when a player owns multiple companies.
+                // Español: Establecer el nombre visible para una empresa propia. Soporta seleccionar una empresa específica cuando el jugador tiene múltiples empresas.
                 String companyId = CompanyAccounts.ensureDefault(me);
                 int nameStartIndex = 1;
 
@@ -173,22 +171,23 @@ public class CommandPrimeBank extends CommandBase {
 
                 String arg1 = args[nameStartIndex];
                 if ("clear".equalsIgnoreCase(arg1)) {
-                    PrimeBankState.get().setCompanyName(companyId, null);
-                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.cleared"));
-                } else {
-                    String name = String.join(" ", java.util.Arrays.copyOfRange(args, nameStartIndex, args.length))
-                            .trim();
-                    PrimeBankState.get().setCompanyName(companyId, name);
-                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.set", name));
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_name"));
+                    break;
                 }
+                String name = String.join(" ", java.util.Arrays.copyOfRange(args, nameStartIndex, args.length))
+                        .trim();
+                if (name.isEmpty()) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_name"));
+                    break;
+                }
+                PrimeBankState.get().setCompanyName(companyId, name);
+                sender.sendMessage(new TextComponentTranslation("primebank.company.name.set", name));
                 com.primebank.persistence.BankPersistence.saveAllAsync();
                 break;
             }
             case "setcompanyticker": {
-                // English: Set or clear the ticker for an owned company; supports selecting a
-                // specific company when a player owns multiple.
-                // Español: Establecer o limpiar el ticker para una empresa propia; soporta
-                // seleccionar una empresa específica cuando el jugador tiene múltiples.
+                // English: Set the ticker for an owned company; supports selecting a specific company when a player owns multiple.
+                // Español: Establecer el ticker para una empresa propia; soporta seleccionar una empresa específica cuando el jugador tiene múltiples.
                 String companyId = CompanyAccounts.ensureDefault(me);
                 int tickerIndex = 1;
 
@@ -229,17 +228,16 @@ public class CommandPrimeBank extends CommandBase {
 
                 String arg1 = args[tickerIndex];
                 if ("clear".equalsIgnoreCase(arg1)) {
-                    PrimeBankState.get().setCompanyShortName(companyId, null);
-                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_cleared"));
-                } else {
-                    String ticker = arg1.trim().toUpperCase();
-                    if (ticker.length() < 2 || ticker.length() > 8 || !ticker.matches("[A-Z0-9]+")) {
-                        sender.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_short"));
-                        break;
-                    }
-                    PrimeBankState.get().setCompanyShortName(companyId, ticker);
-                    sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_set", ticker));
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_short"));
+                    break;
                 }
+                String ticker = arg1.trim().toUpperCase();
+                if (ticker.length() < 2 || ticker.length() > 8 || !ticker.matches("[A-Z0-9]+")) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_short"));
+                    break;
+                }
+                PrimeBankState.get().setCompanyShortName(companyId, ticker);
+                sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_set", ticker));
                 com.primebank.persistence.BankPersistence.saveAllAsync();
                 break;
             }
