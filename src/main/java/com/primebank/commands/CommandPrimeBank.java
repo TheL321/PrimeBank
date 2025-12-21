@@ -88,7 +88,7 @@ public class CommandPrimeBank extends CommandBase {
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         if (args.length == 0) {
             if (sender instanceof EntityPlayerMP) {
-                sendHelp(sender);
+                sendHelp(server, sender);
             } else {
                 sender.sendMessage(new TextComponentTranslation("primebank.usage", getUsage(sender)));
             }
@@ -449,6 +449,12 @@ public class CommandPrimeBank extends CommandBase {
                 // cross-world leakage.
                 // Español: Reiniciar y recargar datos por mundo (cuentas, empresas) para evitar
                 // fugas entre mundos.
+                // English: Admin-only (OP level 2 required).
+                // Español: Solo admin (requiere OP nivel 2).
+                if (!com.primebank.core.admin.AdminService.isAdmin(me, server, sender)) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.admin.not_admin"));
+                    break;
+                }
                 File worldDir = server.getEntityWorld().getSaveHandler().getWorldDirectory();
                 PersistencePaths.setWorldDir(worldDir);
                 com.primebank.core.state.PrimeBankState.get().resetForNewWorld();
@@ -920,7 +926,7 @@ public class CommandPrimeBank extends CommandBase {
         throw new CommandException("primebank.error.player_not_found", username);
     }
 
-    private void sendHelp(ICommandSender sender) {
+    private void sendHelp(MinecraftServer server, ICommandSender sender) {
         sender.sendMessage(new TextComponentString("§6PrimeBank Commands:§r"));
         sender.sendMessage(new TextComponentString("§e-- Basic --§r"));
         sender.sendMessage(new TextComponentString(" /pb balance"));
@@ -940,7 +946,9 @@ public class CommandPrimeBank extends CommandBase {
         sender.sendMessage(new TextComponentString(" /pb marketlist <shares> <company>"));
         sender.sendMessage(new TextComponentString(" /pb marketbuy <company> <shares>"));
 
-        if (sender.canUseCommand(2, "gamemode")) {
+        if ((sender instanceof EntityPlayerMP)
+                && com.primebank.core.admin.AdminService.isAdmin(((EntityPlayerMP) sender).getUniqueID(), server,
+                        sender)) {
             sender.sendMessage(new TextComponentString("§c-- Admin --§r"));
             sender.sendMessage(new TextComponentString(" /pb adminapprove <company>"));
             sender.sendMessage(new TextComponentTranslation("primebank.admin.company.approved", "<company>"));

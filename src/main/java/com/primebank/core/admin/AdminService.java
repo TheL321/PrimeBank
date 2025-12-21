@@ -47,9 +47,16 @@ public final class AdminService {
 
     public static boolean isAdmin(java.util.UUID uuid, net.minecraft.server.MinecraftServer server, net.minecraft.command.ICommandSender sender) {
         if (uuid == null) return false;
-        if (ADMIN_UUIDS.contains(uuid)) return true;
         try {
-            return sender.canUseCommand(2, "primebank");
+            // English: Admin commands require OP (permission level 2). If an allowlist is
+            // configured, the sender must ALSO be in the allowlist.
+            // Español: Los comandos de admin requieren OP (nivel de permiso 2). Si hay
+            // una lista permitida (allowlist), el emisor TAMBIÉN debe estar en esa lista.
+            boolean isOp = sender.canUseCommand(2, "gamemode");
+            if (!isOp) return false;
+
+            if (ADMIN_UUIDS.isEmpty()) return true;
+            return ADMIN_UUIDS.contains(uuid);
         } catch (Throwable t) {
             return false;
         }
