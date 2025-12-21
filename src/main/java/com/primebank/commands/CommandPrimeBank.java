@@ -323,21 +323,30 @@ public class CommandPrimeBank extends CommandBase {
                 }
                 long cents = dollarsToCents(dollars);
 
-                // English: SECURITY FIX: Save BEFORE giving items to prevent money duplication
-                // on crash.
-                // Español: CORRECCIÓN DE SEGURIDAD: Guardar ANTES de entregar ítems para
-                // prevenir duplicación en caso de crash.
-                Ledger.OpResult r = ledger.withdraw(companyId, cents);
-                String key = r.success ? "primebank.withdraw.ok" : ("primebank.withdraw.error." + r.code);
-                if (r.success) {
-                    // Step 1: Withdraw from ledger (already done above)
-                    // Step 2: Save bank data IMMEDIATELY with blocking save
-                    BankPersistence.saveAllBlocking();
-                    // Step 3: Give items to player
-                    sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
-                    CashUtil.giveCurrency(player, cents);
-                    // Step 4: Force player data save to minimize item loss on crash
-                    server.getPlayerList().saveAllPlayerData();
+                // English: SECURITY: Move funds company -> personal via ledger and save before
+                // notifying to avoid mismatched balances.
+                // Español: SEGURIDAD: Mover fondos empresa -> personal vía ledger y guardar
+                // antes de notificar para evitar saldos desincronizados.
+                Ledger.OpResult withdrawResult = ledger.withdraw(companyId, cents);
+                String key = withdrawResult.success ? "primebank.withdraw.ok"
+                        : ("primebank.withdraw.error." + withdrawResult.code);
+                if (withdrawResult.success) {
+                    // English: Credit player's personal account after successful company debit.
+                    // Español: Acreditar la cuenta personal del jugador tras debitar la empresa.
+                    Ledger.OpResult depositResult = ledger.deposit(myAcc, cents);
+                    if (depositResult.success) {
+                        // English: Persist both accounts to avoid drift on crash.
+                        // Español: Persistir ambas cuentas para evitar desincronización en caso
+                        // de crash.
+                        BankPersistence.saveAllBlocking();
+                        sender.sendMessage(new TextComponentTranslation(key, Money.formatUsd(cents)));
+                    } else {
+                        // English: Best-effort rollback if personal deposit unexpectedly fails.
+                        // Español: Reversión de mejor esfuerzo si el depósito personal falla
+                        // inesperadamente.
+                        ledger.deposit(companyId, cents);
+                        sender.sendMessage(new TextComponentTranslation("primebank.deposit.error." + depositResult.code));
+                    }
                 } else {
                     sender.sendMessage(new TextComponentTranslation(key));
                 }
