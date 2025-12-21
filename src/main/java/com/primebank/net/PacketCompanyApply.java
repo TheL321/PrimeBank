@@ -72,6 +72,19 @@ public class PacketCompanyApply implements IMessage {
                         && (existingDefault.description == null || existingDefault.description.trim().isEmpty())
                         && !existingDefault.approved);
                 Company c = defaultIsEmpty ? reg.ensureDefault(owner) : reg.createNew(owner);
+                // English: Reject duplicate display names or tickers before mutating state.
+                // Español: Rechazar nombres visibles o tickers duplicados antes de mutar el estado.
+                for (java.util.Map.Entry<String, String> entry : PrimeBankState.get().getAllCompanyNames().entrySet()) {
+                    if (!entry.getKey().equals(c.id) && nameTrimmed.equalsIgnoreCase(entry.getValue())) {
+                        p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.company.apply.bad_name"));
+                        return;
+                    }
+                }
+                String tickerOwner = PrimeBankState.get().findCompanyIdByTicker(tickerSanitized);
+                if (tickerOwner != null && !tickerOwner.equals(c.id)) {
+                    p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.company.apply.bad_short"));
+                    return;
+                }
                 // English: Ensure an account exists for this company id (needed for ledger/markets).
                 // Español: Asegurar que exista una cuenta para este id de empresa (necesario para ledger/mercados).
                 if (!PrimeBankState.get().accounts().exists(c.id)) {
@@ -85,12 +98,18 @@ public class PacketCompanyApply implements IMessage {
                 // English: Update display name mapping so POS and UIs show it immediately.
                 // Español: Actualizar el mapeo de nombre visible para que POS y UIs lo muestren de inmediato.
                 if (c.name != null && !c.name.isEmpty()) {
-                    PrimeBankState.get().setCompanyName(c.id, c.name);
+                    if (!PrimeBankState.get().setCompanyName(c.id, c.name)) {
+                        p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.company.apply.bad_name"));
+                        return;
+                    }
                 }
                 if (c.shortName != null && !c.shortName.isEmpty()) {
                     // English: Also set the ticker-style short name.
                     // Español: También establecer el nombre corto tipo ticker.
-                    PrimeBankState.get().setCompanyShortName(c.id, c.shortName);
+                    if (!PrimeBankState.get().setCompanyShortName(c.id, c.shortName)) {
+                        p.sendMessage(new net.minecraft.util.text.TextComponentTranslation("primebank.company.apply.bad_short"));
+                        return;
+                    }
                 }
                 CompanyPersistence.saveCompany(c);
                 // English: Persist snapshot including company display names.

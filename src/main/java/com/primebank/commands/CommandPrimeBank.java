@@ -180,7 +180,10 @@ public class CommandPrimeBank extends CommandBase {
                     sender.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_name"));
                     break;
                 }
-                PrimeBankState.get().setCompanyName(companyId, name);
+                if (!PrimeBankState.get().setCompanyName(companyId, name)) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_name"));
+                    break;
+                }
                 sender.sendMessage(new TextComponentTranslation("primebank.company.name.set", name));
                 com.primebank.persistence.BankPersistence.saveAllAsync();
                 break;
@@ -236,7 +239,10 @@ public class CommandPrimeBank extends CommandBase {
                     sender.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_short"));
                     break;
                 }
-                PrimeBankState.get().setCompanyShortName(companyId, ticker);
+                if (!PrimeBankState.get().setCompanyShortName(companyId, ticker)) {
+                    sender.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_short"));
+                    break;
+                }
                 sender.sendMessage(new TextComponentTranslation("primebank.company.name.short_set", ticker));
                 com.primebank.persistence.BankPersistence.saveAllAsync();
                 break;

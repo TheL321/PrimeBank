@@ -126,13 +126,21 @@ public final class PrimeBankState {
      * Español: Establecer/obtener nombres visibles de empresas, y snapshot/cargador
      * para persistencia.
      */
-    public void setCompanyName(String companyId, String name) {
+    public boolean setCompanyName(String companyId, String name) {
         if (companyId == null)
-            return;
+            return false;
         String trimmed = name == null ? "" : name.trim();
         if (trimmed.isEmpty())
-            return; // English: Do not allow clearing names; keep existing. / Español: No permitir limpiar nombres; mantener el existente.
+            return false; // English: Do not allow clearing names; keep existing. / Español: No permitir limpiar nombres; mantener el existente.
+        // English: Reject duplicate display names across companies.
+        // Español: Rechazar nombres visibles duplicados entre empresas.
+        for (java.util.Map.Entry<String, String> entry : companyNames.entrySet()) {
+            if (!entry.getKey().equals(companyId) && trimmed.equalsIgnoreCase(entry.getValue())) {
+                return false;
+            }
+        }
         companyNames.put(companyId, trimmed);
+        return true;
     }
 
     public String getCompanyName(String companyId) {
@@ -154,17 +162,23 @@ public final class PrimeBankState {
      * Español: Establecer/obtener tickers cortos de empresa y sus contrapartes para
      * snapshots.
      */
-    public synchronized void setCompanyShortName(String companyId, String shortName) {
+    public synchronized boolean setCompanyShortName(String companyId, String shortName) {
         if (companyId == null)
-            return;
+            return false;
         String sanitized = shortName == null ? "" : shortName.trim();
         // English: Keep ticker to a single alphanumeric word and uppercase it.
         // Español: Mantener el ticker como una sola palabra alfanumérica y en mayúsculas.
         sanitized = sanitized.replaceAll("[^A-Za-z0-9]", "");
         if (sanitized.isEmpty()) {
-            return; // English: Do not allow clearing tickers; ignore empty values. / Español: No permitir limpiar tickers; ignorar valores vacíos.
+            return false; // English: Do not allow clearing tickers; ignore empty values. / Español: No permitir limpiar tickers; ignorar valores vacíos.
         }
         sanitized = sanitized.toUpperCase(Locale.ROOT);
+        // English: Reject duplicate tickers across companies.
+        // Español: Rechazar tickers duplicados entre empresas.
+        String existingOwner = companyShortToId.get(sanitized);
+        if (existingOwner != null && !existingOwner.equals(companyId)) {
+            return false;
+        }
 
         String previous = companyShortNames.get(companyId);
         if (previous != null) {
@@ -187,6 +201,7 @@ public final class PrimeBankState {
         if (self != null) {
             self.shortName = sanitized;
         }
+        return true;
     }
 
     public String getCompanyShortName(String companyId) {
