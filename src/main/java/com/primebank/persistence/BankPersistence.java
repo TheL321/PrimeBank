@@ -47,7 +47,23 @@ public class BankPersistence {
         if (!file.exists())
             return;
 
-        AccountsSnapshot snap = JsonUtil.read(file, AccountsSnapshot.class);
+        AccountsSnapshot snap = null;
+        try {
+            snap = JsonUtil.read(file, AccountsSnapshot.class);
+        } catch (Exception e) {
+             PrimeBankMod.LOGGER.error("[PrimeBank] CRITICAL: Failed to load accounts.json. File may be corrupted. / CRÍTICO: Falló la carga de accounts.json. El archivo puede estar corrupto.", e);
+             // English: Backup corrupted file to prevent data loss on overwrite.
+             // Español: Respaldar archivo corrupto para prevenir pérdida de datos al sobrescribir.
+             File backup = new File(file.getParentFile(), file.getName() + ".corrupted." + System.currentTimeMillis());
+             try {
+                 Files.copy(file.toPath(), backup.toPath());
+                 PrimeBankMod.LOGGER.warn("[PrimeBank] Corrupted file backed up to: " + backup.getName());
+             } catch (Exception ex) {
+                 PrimeBankMod.LOGGER.error("[PrimeBank] Failed to backup corrupted file!", ex);
+             }
+             return;
+        }
+
         if (snap == null || snap.accounts == null)
             return;
 
@@ -132,23 +148,14 @@ public class BankPersistence {
         snap.companyShortNames = new java.util.HashMap<>(PrimeBankState.get().getAllCompanyShortNames());
         snap.globalCashbackBps = PrimeBankState.get().getGlobalCashbackBps();
 
-        // English: Write to temp file first.
-        // Español: Escribir al archivo temporal primero.
+        // English: Write atomically using helper.
+        // Español: Escribir atómicamente usando ayudante.
         try {
-            JsonUtil.write(tmpFile, snap);
-
-            // English: Atomic move.
-            // Español: Movimiento atómico.
-            try {
-                Files.move(tmpFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
-                PrimeBankMod.LOGGER.info("[PrimeBank] Snapshot saved atomically: {} accounts", snap.accounts.size());
-            } catch (Exception e) {
-                PrimeBankMod.LOGGER.error(
-                        "[PrimeBank] Failed to move temp file to final / Fallo al mover archivo temporal al final", e);
-            }
+            JsonUtil.writeAtomic(file, snap);
+            PrimeBankMod.LOGGER.info("[PrimeBank] Snapshot saved atomically: {} accounts", snap.accounts.size());
         } catch (Exception e) {
-            PrimeBankMod.LOGGER.error("[PrimeBank] Failed to write temp file / Fallo al escribir archivo temporal", e);
+            PrimeBankMod.LOGGER.error(
+                    "[PrimeBank] Failed to save snapshot atomically / Fallo al guardar snapshot atómicamente", e);
         }
     }
 

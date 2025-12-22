@@ -34,7 +34,7 @@ public class TransactionLogger {
                 writer.write(logEntry);
                 writer.newLine();
             } catch (IOException e) {
-                e.printStackTrace();
+                com.primebank.PrimeBankMod.LOGGER.error("[PrimeBank] Failed to log transaction", e);
             }
 
             // Log to Discord

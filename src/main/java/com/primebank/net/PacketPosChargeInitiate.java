@@ -117,7 +117,10 @@ public class PacketPosChargeInitiate implements IMessage {
                                 if (gp != null && gp.getName() != null)
                                     disp = gp.getName();
                             }
-                        } catch (Exception ignored) {
+                        } catch (Exception e) {
+                            com.primebank.PrimeBankMod.LOGGER.warn(
+                                    "[PrimeBank] Failed to resolve merchant name for {}: {}", companyId,
+                                    e.getMessage());
                         }
                     }
                     if (disp == null || disp.isEmpty())

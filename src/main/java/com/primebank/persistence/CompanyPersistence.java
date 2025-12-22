@@ -130,7 +130,7 @@ public final class CompanyPersistence {
             }
             // English: Write to disk outside the lock to minimize contention.
             // Español: Escribir en disco fuera del bloqueo para minimizar contención.
-            JsonUtil.writeString(f, json);
+            JsonUtil.writeStringAtomic(f, json);
         } catch (Exception ex) {
             PrimeBankMod.LOGGER.error("[PrimeBank] Failed to save company {}", c.id, ex);
         }

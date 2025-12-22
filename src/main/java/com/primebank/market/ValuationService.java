@@ -34,16 +34,21 @@ public final class ValuationService {
     private static final ValuationService INSTANCE = new ValuationService();
     private ScheduledExecutorService scheduler;
 
-    private ValuationService() {}
+    private ValuationService() {
+    }
 
-    public static ValuationService get() { return INSTANCE; }
+    public static ValuationService get() {
+        return INSTANCE;
+    }
 
     /*
-     English: Start periodic valuation checks. Runs every 5 minutes.
-     Español: Iniciar verificaciones periódicas de valoración. Corre cada 5 minutos.
-    */
+     * English: Start periodic valuation checks. Runs every 5 minutes.
+     * Español: Iniciar verificaciones periódicas de valoración. Corre cada 5
+     * minutos.
+     */
     public synchronized void start() {
-        if (scheduler != null) return;
+        if (scheduler != null)
+            return;
         scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "PrimeBank-Valuation");
             t.setDaemon(true);
@@ -54,9 +59,9 @@ public final class ValuationService {
     }
 
     /*
-     English: Stop scheduler gracefully.
-     Español: Detener el scheduler de forma limpia.
-    */
+     * English: Stop scheduler gracefully.
+     * Español: Detener el scheduler de forma limpia.
+     */
     public synchronized void stop() {
         if (scheduler != null) {
             scheduler.shutdownNow();
@@ -66,46 +71,54 @@ public final class ValuationService {
     }
 
     private void runOnceSafe() {
-        try { runOnce(); } catch (Throwable t) {
+        try {
+            runOnce();
+        } catch (Exception t) {
             PrimeBankMod.LOGGER.error("[PrimeBank] Valuation run failed", t);
         }
     }
 
     /*
-     English: Iterate companies and compute valuations if due.
-     Español: Iterar empresas y calcular valoraciones si corresponde.
-    */
+     * English: Iterate companies and compute valuations if due.
+     * Español: Iterar empresas y calcular valoraciones si corresponde.
+     */
     private void runOnce() {
         CompanyRegistry reg = PrimeBankState.get().companies();
         List<Company> updated = new ArrayList<>();
         long now = System.currentTimeMillis();
         for (Company c : reg.all()) {
-            if (c == null || !c.approved) continue;
-            if (c.approvedAt <= 0) continue;
+            if (c == null || !c.approved)
+                continue;
+            if (c.approvedAt <= 0)
+                continue;
             if (c.salesLast7DaysCents == null) {
-                // English: Initialize rolling window to avoid null checks later. Español: Inicializar ventana rodante para evitar nulls.
+                // English: Initialize rolling window to avoid null checks later. Español:
+                // Inicializar ventana rodante para evitar nulls.
                 c.salesLast7DaysCents = new java.util.ArrayList<>();
             }
             long lastValuation = c.lastValuationAt;
             long dueAt = (lastValuation > 0) ? lastValuation + DAY_MS : c.approvedAt + DAY_MS;
-            if (now < dueAt) continue;
+            if (now < dueAt)
+                continue;
 
             long previousValuation = c.valuationCurrentCents;
             long sales = c.salesWeekCents;
             boolean changed = false;
 
             // English: Safeguard to prevent runaway catch-up loops (max 365 days = 1 year).
-            // Español: Protección para prevenir bucles catch-up descontrolados (máx 365 días = 1 año).
+            // Español: Protección para prevenir bucles catch-up descontrolados (máx 365
+            // días = 1 año).
             int maxCatchupDays = 365;
             int catchupCount = 0;
-            
+
             while (now >= dueAt && catchupCount < maxCatchupDays) {
                 catchupCount++;
                 long dailySales = Math.max(0L, sales);
                 c.salesLast7DaysCents.add(dailySales);
                 if (c.salesLast7DaysCents.size() > 7) {
                     int excessDays = c.salesLast7DaysCents.size() - 7;
-                    for (int i = 0; i < excessDays; i++) c.salesLast7DaysCents.remove(0);
+                    for (int i = 0; i < excessDays; i++)
+                        c.salesLast7DaysCents.remove(0);
                 }
                 long windowSales = 0L;
                 for (Long daySales : c.salesLast7DaysCents) {
@@ -117,22 +130,26 @@ public final class ValuationService {
                 if (lastValuation <= 0) {
                     valuation = Math.max(0L, Math.multiplyExact(windowSales, 6L));
                 } else {
-                    long term = Math.addExact(Math.multiplyExact(windowSales, 6L), Math.multiplyExact(previousValuation, 2L));
+                    long term = Math.addExact(Math.multiplyExact(windowSales, 6L),
+                            Math.multiplyExact(previousValuation, 2L));
                     long computed = term / 3L;
                     valuation = Math.max(0L, computed);
                 }
 
-                if (c.valuationHistoryCents == null) c.valuationHistoryCents = new java.util.ArrayList<>();
+                if (c.valuationHistoryCents == null)
+                    c.valuationHistoryCents = new java.util.ArrayList<>();
                 c.valuationHistoryCents.add(valuation);
                 if (c.valuationHistoryCents.size() > 26) {
                     int excess = c.valuationHistoryCents.size() - 26;
-                    for (int i = 0; i < excess; i++) c.valuationHistoryCents.remove(0);
+                    for (int i = 0; i < excess; i++)
+                        c.valuationHistoryCents.remove(0);
                 }
 
                 previousValuation = valuation;
                 lastValuation = dueAt;
                 dueAt = lastValuation + DAY_MS;
-                sales = 0L; // English: After first catch-up, remaining days assume no recorded sales. Español: Tras el primer catch-up, se asume cero ventas en días restantes.
+                sales = 0L; // English: After first catch-up, remaining days assume no recorded sales.
+                            // Español: Tras el primer catch-up, se asume cero ventas en días restantes.
                 changed = true;
             }
 

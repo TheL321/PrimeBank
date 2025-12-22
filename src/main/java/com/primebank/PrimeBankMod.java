@@ -36,27 +36,32 @@ public class PrimeBankMod {
 
     public static SimpleNetworkWrapper NETWORK;
     public static Logger LOGGER = LogManager.getLogger(NAME);
-    
+
     /*
-     English: Proxy to handle client/server-specific logic (e.g., GUI opening).
-     Español: Proxy para manejar lógica específica de cliente/servidor (ej., apertura de GUI).
-    */
+     * English: Proxy to handle client/server-specific logic (e.g., GUI opening).
+     * Español: Proxy para manejar lógica específica de cliente/servidor (ej.,
+     * apertura de GUI).
+     */
     @SidedProxy(clientSide = "com.primebank.proxy.ClientProxy", serverSide = "com.primebank.proxy.CommonProxy")
     public static CommonProxy PROXY;
+
+    private static java.util.concurrent.ScheduledExecutorService scheduler;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         /*
-         English: Pre-initialization phase. Set up logging and networking, and apply default settings.
-         Español: Fase de preinicialización. Configura el registro y la red, y aplica ajustes por defecto.
-        */
+         * English: Pre-initialization phase. Set up logging and networking, and apply
+         * default settings.
+         * Español: Fase de preinicialización. Configura el registro y la red, y aplica
+         * ajustes por defecto.
+         */
         LOGGER = event.getModLog();
         NETWORK = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
         PrimeBankConfig.reloadDefaults();
         /*
-         English: Initialize global state (registries, central bank account).
-         Español: Inicializa el estado global (registros, cuenta del banco central).
-        */
+         * English: Initialize global state (registries, central bank account).
+         * Español: Inicializa el estado global (registros, cuenta del banco central).
+         */
         PrimeBankState.get().init();
         // English: Register tile entities.
         // Español: Registrar entidades de bloque.
@@ -66,30 +71,40 @@ public class PrimeBankMod {
     @EventHandler
     public void init(FMLInitializationEvent event) {
         /*
-         English: Initialization phase. Reserved for registries, GUIs, and packet registration in later phases.
-         Español: Fase de inicialización. Reservado para registros, interfaces y paquetes en fases posteriores.
-        */
-        // English: Register network packets in a side-safe way.
-        // Español: Registrar paquetes de red respetando los lados.
-        Net.registerForServer();
-        PROXY.registerClientPackets();
+         * English: Initialization phase. Reserved for registries, GUIs, and packet
+         * registration in later phases.
+         * Español: Fase de inicialización. Reservado para registros, interfaces y
+         * paquetes en fases posteriores.
+         */
+        // English: Register network packets in a unified way.
+        // Español: Registrar paquetes de red de forma unificada.
+        Net.init();
+        PROXY.registerClientPackets(); // Keeps client proxy logic if any remains (e.g. models), though packet reg is
+                                       // moved.
+
     }
 
     @EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
         /*
-         English: Server starting: set world directory, load snapshots, and register /primebank command.
-         Español: Inicio del servidor: establece directorio del mundo, carga snapshots y registra el comando /primebank.
-        */
+         * English: Server starting: set world directory, load snapshots, and register
+         * /primebank command.
+         * Español: Inicio del servidor: establece directorio del mundo, carga snapshots
+         * y registra el comando /primebank.
+         */
         File worldDir = event.getServer().getEntityWorld().getSaveHandler().getWorldDirectory();
         PersistencePaths.setWorldDir(worldDir);
         /*
-         * English: Load server-side config (cashback toggle, webhook, etc.) relative to the data directory.
-         * Español: Cargar la configuración del lado del servidor (interruptor de cashback, webhook, etc.) con base en el directorio de datos.
+         * English: Load server-side config (cashback toggle, webhook, etc.) relative to
+         * the data directory.
+         * Español: Cargar la configuración del lado del servidor (interruptor de
+         * cashback, webhook, etc.) con base en el directorio de datos.
          */
         PrimeBankConfig.load(event.getServer().getDataDirectory());
-        // English: Reset in-memory state to avoid cross-world leakage before loading this world's data.
-        // Español: Reiniciar el estado en memoria para evitar fugas entre mundos antes de cargar los datos de este mundo.
+        // English: Reset in-memory state to avoid cross-world leakage before loading
+        // this world's data.
+        // Español: Reiniciar el estado en memoria para evitar fugas entre mundos antes
+        // de cargar los datos de este mundo.
         com.primebank.core.state.PrimeBankState.get().resetForNewWorld();
         BankPersistence.loadAll();
         com.primebank.core.admin.AdminService.reload(event.getServer().getDataDirectory());
@@ -99,16 +114,41 @@ public class PrimeBankMod {
         com.primebank.core.state.PrimeBankState.get().ensureCentralAccount();
         com.primebank.market.ValuationService.get().start();
         event.registerServerCommand(new CommandPrimeBank());
+
+        // Auto-save task
+        scheduler = java.util.concurrent.Executors
+                .newSingleThreadScheduledExecutor(r -> new Thread(r, "PrimeBank-AutoSave"));
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                BankPersistence.saveAllAsync();
+                com.primebank.persistence.CompanyPersistence.saveAll();
+            } catch (Exception e) {
+                LOGGER.error("[PrimeBank] Auto-save failed", e);
+            }
+        }, 5, 5, java.util.concurrent.TimeUnit.MINUTES);
+        LOGGER.info("[PrimeBank] Auto-save task started (5 min interval).");
+
     }
 
     @EventHandler
     public void serverStopping(FMLServerStoppingEvent event) {
         /*
-         English: Server stopping: save snapshot to disk.
-         Español: Parada del servidor: guarda snapshot en disco.
-        */
+         * English: Server stopping: save snapshot to disk.
+         * Español: Parada del servidor: guarda snapshot en disco.
+         */
         BankPersistence.saveAllBlocking();
         com.primebank.persistence.CompanyPersistence.saveAll();
         com.primebank.market.ValuationService.get().stop();
+        if (scheduler != null) {
+            scheduler.shutdown();
+            try {
+                if (!scheduler.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scheduler.shutdownNow();
+            }
+        }
+
     }
 }

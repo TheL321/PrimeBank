@@ -161,7 +161,9 @@ public class PacketPosRespond implements IMessage {
                             com.primebank.util.NotificationHelper.notifyPosSale(p.getServerWorld().getMinecraftServer(),
                                     p.getUniqueID(), owner, expected.companyId, expected.cents);
                         }
-                    } catch (Exception ignored) {
+                    } catch (Exception e) {
+                        com.primebank.PrimeBankMod.LOGGER.warn("[PrimeBank] Failed to notify merchant: {}",
+                                e.getMessage());
                     }
 
                     // English: Optionally clear the company's pending POS amount after a successful

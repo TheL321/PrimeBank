@@ -29,25 +29,36 @@ public class BlockPOSPrimeBank extends Block {
         setHardness(3.0F);
         setResistance(10.0F);
         setSoundType(SoundType.METAL);
-        // English: Use domain-qualified registry name so blockstates/models resolve (primebank:pos_primebank).
-        // Español: Usar nombre de registro con dominio para que se resuelvan blockstates/modelos (primebank:pos_primebank).
+        // English: Use domain-qualified registry name so blockstates/models resolve
+        // (primebank:pos_primebank).
+        // Español: Usar nombre de registro con dominio para que se resuelvan
+        // blockstates/modelos (primebank:pos_primebank).
         setRegistryName(PrimeBankMod.MODID, "pos_primebank");
         setUnlocalizedName("primebank.pos_primebank");
     }
 
     @Override
-    public boolean hasTileEntity(IBlockState state) { return true; }
+    public boolean hasTileEntity(IBlockState state) {
+        return true;
+    }
 
     @Override
-    public TileEntity createTileEntity(World world, IBlockState state) { return new TilePosPrimeBank(); }
+    public TileEntity createTileEntity(World world, IBlockState state) {
+        return new TilePosPrimeBank();
+    }
 
     @Override
-    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-        // English: Server-side: first right-click links POS to the player's default company if not holding a card (avoids buyers linking by accident).
-        // Español: Lado servidor: el primer clic derecho enlaza el POS a la empresa por defecto del jugador si no sostiene una tarjeta (evita que compradores la enlacen por accidente).
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn,
+            EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+        // English: Server-side: first right-click links POS to the player's default
+        // company if not holding a card (avoids buyers linking by accident).
+        // Español: Lado servidor: el primer clic derecho enlaza el POS a la empresa por
+        // defecto del jugador si no sostiene una tarjeta (evita que compradores la
+        // enlacen por accidente).
         if (!worldIn.isRemote) {
             TileEntity te = worldIn.getTileEntity(pos);
-            if (!(te instanceof TilePosPrimeBank)) return true;
+            if (!(te instanceof TilePosPrimeBank))
+                return true;
             TilePosPrimeBank t = (TilePosPrimeBank) te;
             if (t.companyId != null && playerIn.isSneaking()) {
                 // English: If already linked, inform the player.
@@ -60,29 +71,43 @@ public class BlockPOSPrimeBank extends Block {
                         try {
                             String raw = t.companyId.substring(2);
                             java.util.UUID owner = java.util.UUID.fromString(raw);
-                            net.minecraft.entity.player.EntityPlayerMP online = worldIn.getMinecraftServer().getPlayerList().getPlayerByUUID(owner);
-                            if (online != null) label = online.getName();
+                            net.minecraft.entity.player.EntityPlayerMP online = worldIn.getMinecraftServer()
+                                    .getPlayerList().getPlayerByUUID(owner);
+                            if (online != null)
+                                label = online.getName();
                             else {
-                                com.mojang.authlib.GameProfile gp = worldIn.getMinecraftServer().getPlayerProfileCache().getProfileByUUID(owner);
-                                if (gp != null && gp.getName() != null) label = gp.getName();
+                                com.mojang.authlib.GameProfile gp = worldIn.getMinecraftServer().getPlayerProfileCache()
+                                        .getProfileByUUID(owner);
+                                if (gp != null && gp.getName() != null)
+                                    label = gp.getName();
                             }
-                        } catch (Exception ignored) {}
+                        } catch (Exception e) {
+                            PrimeBankMod.LOGGER.debug("[PrimeBank] BlockPOS name resolution failed: {}",
+                                    e.getMessage());
+                        }
                     }
-                    if (label == null || label.isEmpty()) label = t.companyId;
+                    if (label == null || label.isEmpty())
+                        label = t.companyId;
                 }
                 playerIn.sendMessage(new TextComponentTranslation("primebank.pos.linked.already", label));
                 return true;
             }
         }
-        // English: Buyer client-side initiates POS charge when right-clicking while holding a card.
-        // Español: Cliente comprador inicia el cobro POS al hacer clic derecho sosteniendo una tarjeta.
-        if (worldIn.isRemote) {
+        // English: Buyer client-side initiates POS charge when right-clicking while
+        // holding a card.
+        // Español: Cliente comprador inicia el cobro POS al hacer clic derecho
+        // sosteniendo una tarjeta.
+        if (worldIn.isRemote)
+
+        {
             ItemStack held = playerIn.getHeldItem(hand);
             if (held != null && held.getItem() instanceof ItemCard) {
                 PrimeBankMod.NETWORK.sendToServer(new PacketPosChargeInitiate(pos));
             } else {
-                // English: Not holding a card — request to open the POS config GUI (owner-only validation on server).
-                // Español: No sosteniendo una tarjeta — solicitar abrir la GUI de configuración del POS (validación de dueño en el servidor).
+                // English: Not holding a card — request to open the POS config GUI (owner-only
+                // validation on server).
+                // Español: No sosteniendo una tarjeta — solicitar abrir la GUI de configuración
+                // del POS (validación de dueño en el servidor).
                 PrimeBankMod.NETWORK.sendToServer(new PacketPosOpenConfigRequest(pos));
             }
             return true;

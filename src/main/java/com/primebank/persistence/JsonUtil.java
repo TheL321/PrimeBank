@@ -62,4 +62,29 @@ public final class JsonUtil {
             throw new RuntimeException("Failed to write string / Falló la escritura de cadena: " + file, e);
         }
     }
+
+    public static void writeAtomic(File file, Object obj) {
+        File tmp = new File(file.getParentFile(), file.getName() + ".tmp");
+        try {
+            file.getParentFile().mkdirs();
+            write(tmp, obj);
+            java.nio.file.Files.move(tmp.toPath(), file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to write atomic JSON / Falló la escritura atómica de JSON: " + file, e);
+        }
+    }
+
+    public static void writeStringAtomic(File file, String content) {
+        File tmp = new File(file.getParentFile(), file.getName() + ".tmp");
+        try {
+            file.getParentFile().mkdirs();
+            writeString(tmp, content);
+            java.nio.file.Files.move(tmp.toPath(), file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to write atomic string / Falló la escritura atómica de cadena: " + file,
+                    e);
+        }
+    }
 }

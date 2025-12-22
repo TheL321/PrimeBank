@@ -65,7 +65,8 @@ public class CommandPrimeBank extends CommandBase {
                 com.mojang.authlib.GameProfile gp = server.getPlayerProfileCache().getProfileByUUID(owner);
                 if (gp != null && gp.getName() != null)
                     return gp.getName();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                // Ignore resolution errors, fallback to ID
             }
         }
         String base = companyId;
@@ -128,12 +129,16 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "setcompanyname": {
-                // English: Set the display name for an owned company. Supports selecting a specific company when a player owns multiple companies.
-                // Español: Establecer el nombre visible para una empresa propia. Soporta seleccionar una empresa específica cuando el jugador tiene múltiples empresas.
+                // English: Set the display name for an owned company. Supports selecting a
+                // specific company when a player owns multiple companies.
+                // Español: Establecer el nombre visible para una empresa propia. Soporta
+                // seleccionar una empresa específica cuando el jugador tiene múltiples
+                // empresas.
                 String companyId = CompanyAccounts.ensureDefault(me);
                 int nameStartIndex = 1;
 
-                // English: Optional selector form: /pb setcompanyname for <company> <name|clear>
+                // English: Optional selector form: /pb setcompanyname for <company>
+                // <name|clear>
                 // Español: Forma opcional: /pb setcompanyname for <empresa> <nombre|clear>
                 if (args.length >= 2 && "for".equalsIgnoreCase(args[1])) {
                     if (args.length < 3) {
@@ -189,12 +194,15 @@ public class CommandPrimeBank extends CommandBase {
                 break;
             }
             case "setcompanyticker": {
-                // English: Set the ticker for an owned company; supports selecting a specific company when a player owns multiple.
-                // Español: Establecer el ticker para una empresa propia; soporta seleccionar una empresa específica cuando el jugador tiene múltiples.
+                // English: Set the ticker for an owned company; supports selecting a specific
+                // company when a player owns multiple.
+                // Español: Establecer el ticker para una empresa propia; soporta seleccionar
+                // una empresa específica cuando el jugador tiene múltiples.
                 String companyId = CompanyAccounts.ensureDefault(me);
                 int tickerIndex = 1;
 
-                // English: Optional selector form: /pb setcompanyticker for <company> <ticker|clear>
+                // English: Optional selector form: /pb setcompanyticker for <company>
+                // <ticker|clear>
                 // Español: Forma opcional: /pb setcompanyticker for <empresa> <ticker|clear>
                 if (args.length >= 2 && "for".equalsIgnoreCase(args[1])) {
                     if (args.length < 4) {
@@ -345,7 +353,8 @@ public class CommandPrimeBank extends CommandBase {
                         // Español: Reversión de mejor esfuerzo si el depósito personal falla
                         // inesperadamente.
                         ledger.deposit(companyId, cents);
-                        sender.sendMessage(new TextComponentTranslation("primebank.deposit.error." + depositResult.code));
+                        sender.sendMessage(
+                                new TextComponentTranslation("primebank.deposit.error." + depositResult.code));
                     }
                 } else {
                     sender.sendMessage(new TextComponentTranslation(key));
@@ -617,8 +626,10 @@ public class CommandPrimeBank extends CommandBase {
                 BankPersistence.saveAllAsync();
                 sender.sendMessage(new TextComponentTranslation("primebank.admin.cashback.set", bps));
                 if (!com.primebank.core.config.PrimeBankConfig.CASHBACK_ENABLED) {
-                    // English: Inform admin that cashback is disabled by config even though BPS changed.
-                    // Español: Informar al admin que el cashback está deshabilitado por configuración aunque se cambie el BPS.
+                    // English: Inform admin that cashback is disabled by config even though BPS
+                    // changed.
+                    // Español: Informar al admin que el cashback está deshabilitado por
+                    // configuración aunque se cambie el BPS.
                     sender.sendMessage(new TextComponentTranslation("primebank.admin.cashback.disabled"));
                 }
                 break;
@@ -813,7 +824,7 @@ public class CommandPrimeBank extends CommandBase {
                             else
                                 sender.sendMessage(new TextComponentString("FAILURE: Balance leaked!"));
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            com.primebank.PrimeBankMod.LOGGER.error("API Stress Test Error", e);
                         }
                     }).start();
                 } else if (mode == 2) {
@@ -860,7 +871,7 @@ public class CommandPrimeBank extends CommandBase {
                             else
                                 sender.sendMessage(new TextComponentString("FAILURE: Mass changed!"));
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            com.primebank.PrimeBankMod.LOGGER.error("API Stress Test Error", e);
                         }
                     }).start();
                 }

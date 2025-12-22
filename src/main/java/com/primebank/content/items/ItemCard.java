@@ -29,46 +29,55 @@ public class ItemCard extends Item {
     }
 
     /*
-     English: Ensure the stack has a tag compound and return it.
-     Español: Asegura que la pila tenga un compuesto NBT y lo devuelve.
-    */
+     * English: Ensure the stack has a tag compound and return it.
+     * Español: Asegura que la pila tenga un compuesto NBT y lo devuelve.
+     */
     private static NBTTagCompound getOrCreateTag(ItemStack stack) {
         NBTTagCompound tag = stack.getTagCompound();
-        if (tag == null) { tag = new NBTTagCompound(); stack.setTagCompound(tag); }
+        if (tag == null) {
+            tag = new NBTTagCompound();
+            stack.setTagCompound(tag);
+        }
         return tag;
     }
 
     /*
-     English: Get/set the owner UUID on the card.
-     Español: Obtener/establecer el UUID del dueño en la tarjeta.
-    */
+     * English: Get/set the owner UUID on the card.
+     * Español: Obtener/establecer el UUID del dueño en la tarjeta.
+     */
     public static UUID getOwnerUUID(ItemStack stack) {
         NBTTagCompound tag = stack.getTagCompound();
-        if (tag != null && tag.hasUniqueId("owner")) return tag.getUniqueId("owner");
+        if (tag != null && tag.hasUniqueId("owner"))
+            return tag.getUniqueId("owner");
         return null;
     }
+
     public static void setOwnerUUID(ItemStack stack, UUID owner) {
-        if (owner == null) return;
+        if (owner == null)
+            return;
         getOrCreateTag(stack).setUniqueId("owner", owner);
     }
 
     /*
-     English: Get/set the cardId (string) on the card.
-     Español: Obtener/establecer el cardId (cadena) en la tarjeta.
-    */
+     * English: Get/set the cardId (string) on the card.
+     * Español: Obtener/establecer el cardId (cadena) en la tarjeta.
+     */
     public static String getCardId(ItemStack stack) {
         NBTTagCompound tag = stack.getTagCompound();
         return (tag != null && tag.hasKey("cardId", 8)) ? tag.getString("cardId") : null; // 8 = NBT string
     }
+
     public static void setCardId(ItemStack stack, String id) {
-        if (id == null || id.isEmpty()) return;
+        if (id == null || id.isEmpty())
+            return;
         getOrCreateTag(stack).setString("cardId", id);
     }
 
     /*
-     English: Ensure the card has an ID (short UUID fragment) to help identify it.
-     Español: Asegura que la tarjeta tenga un ID (fragmento corto de UUID) para ayudar a identificarla.
-    */
+     * English: Ensure the card has an ID (short UUID fragment) to help identify it.
+     * Español: Asegura que la tarjeta tenga un ID (fragmento corto de UUID) para
+     * ayudar a identificarla.
+     */
     private static void ensureCardId(ItemStack stack) {
         String id = getCardId(stack);
         if (id == null || id.isEmpty()) {
@@ -78,18 +87,20 @@ public class ItemCard extends Item {
     }
 
     /*
-     English: When the item is created, generate a cardId if missing.
-     Español: Cuando se crea el ítem, generar un cardId si falta.
-    */
+     * English: When the item is created, generate a cardId if missing.
+     * Español: Cuando se crea el ítem, generar un cardId si falta.
+     */
     @Override
     public void onCreated(ItemStack stack, World worldIn, EntityPlayer playerIn) {
         ensureCardId(stack);
     }
 
     /*
-     English: Client tooltip showing owner (if linked) and card ID. Also ensures an ID exists.
-     Español: Tooltip del cliente que muestra el dueño (si está vinculado) y el ID de tarjeta. También asegura que exista un ID.
-    */
+     * English: Client tooltip showing owner (if linked) and card ID. Also ensures
+     * an ID exists.
+     * Español: Tooltip del cliente que muestra el dueño (si está vinculado) y el ID
+     * de tarjeta. También asegura que exista un ID.
+     */
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
@@ -98,8 +109,10 @@ public class ItemCard extends Item {
         if (owner == null) {
             tooltip.add(I18n.format("primebank.card.tooltip.unlinked"));
         } else {
-            // English: Prefer showing the owner's username when it's available on the client.
-            // Español: Preferir mostrar el nombre de usuario del dueño cuando esté disponible en el cliente.
+            // English: Prefer showing the owner's username when it's available on the
+            // client.
+            // Español: Preferir mostrar el nombre de usuario del dueño cuando esté
+            // disponible en el cliente.
             tooltip.add(I18n.format("primebank.card.tooltip.owner", resolveOwnerName(owner)));
         }
         String id = getCardId(stack);
@@ -109,9 +122,11 @@ public class ItemCard extends Item {
     }
 
     /*
-     English: Try to resolve the owner's UUID to a username using the client connection/tab list; fallback to UUID string.
-     Español: Intentar resolver el UUID del dueño a un nombre de usuario usando la conexión del cliente/lista de jugadores; fallback al UUID.
-    */
+     * English: Try to resolve the owner's UUID to a username using the client
+     * connection/tab list; fallback to UUID string.
+     * Español: Intentar resolver el UUID del dueño a un nombre de usuario usando la
+     * conexión del cliente/lista de jugadores; fallback al UUID.
+     */
     @SideOnly(Side.CLIENT)
     private static String resolveOwnerName(UUID owner) {
         try {
@@ -128,7 +143,9 @@ public class ItemCard extends Item {
                     return mc.player.getName();
                 }
             }
-        } catch (Throwable ignored) {}
+        } catch (Exception e) {
+            // Log debug only to avoid client spam
+        }
         return owner.toString();
     }
 }
