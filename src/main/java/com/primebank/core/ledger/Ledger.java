@@ -1,17 +1,18 @@
 package com.primebank.core.ledger;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import com.primebank.core.Money;
 import com.primebank.core.accounts.Account;
 import com.primebank.core.accounts.AccountRegistry;
+import com.primebank.core.config.PrimeBankConfig;
 import com.primebank.core.state.PrimeBankState;
 import com.primebank.core.locks.AccountLockManager;
 
@@ -25,6 +26,50 @@ public final class Ledger {
 
     public Ledger(AccountRegistry accounts) {
         this.accounts = accounts;
+    }
+
+    /*
+     * English: Resolve where central fee income should be deposited (config redirect or
+     * central fallback).
+     * Español: Resolver dónde debe depositarse el ingreso de comisiones del banco
+     * central (redirección por config o central por defecto).
+     */
+    private String getCentralFeeSinkId() {
+        String cfg = PrimeBankConfig.CENTRAL_FEE_REDIRECT_COMPANY_ID;
+        if (cfg != null) {
+            String trimmed = cfg.trim();
+            if (!trimmed.isEmpty() && accounts.get(trimmed) != null) {
+                return trimmed;
+            }
+            if (!trimmed.isEmpty()) {
+                com.primebank.PrimeBankMod.LOGGER.warn(
+                        "[PrimeBank] Central fee redirect target '{}' not found; keeping fees in central / destino no encontrado; se mantienen las comisiones en central",
+                        trimmed);
+            }
+        }
+        return PrimeBankState.CENTRAL_ACCOUNT_ID;
+    }
+
+    /*
+     * English: Deposit fee into central or redirected sink, recording the collection.
+     * Español: Depositar comisión en el central o destino redirigido, registrando la
+     * cobranza.
+     */
+    private void depositCentralFee(Account central, String sinkId, long amountCents, String sourceLabel) {
+        Account sink = sinkId.equals(central.getId()) ? central : accounts.get(sinkId);
+        if (sink == null) {
+            sink = central;
+            sinkId = central.getId();
+            com.primebank.PrimeBankMod.LOGGER.warn(
+                    "[PrimeBank] Fee sink missing; depositing to central instead / Destino de comisión faltante; se deposita en central");
+        }
+        sink.deposit(amountCents);
+        record(sink, "FEE_COLLECT", sourceLabel, amountCents, "Fee collected (" + sourceLabel + ")");
+        if (!sinkId.equals(central.getId())) {
+            com.primebank.PrimeBankMod.LOGGER.info(
+                    "[PrimeBank] Central fee redirect: {} cents from {} routed to {} / Redirección de comisión central: {} centavos desde {} hacia {}",
+                    amountCents, sourceLabel, sinkId, amountCents, sourceLabel, sinkId);
+        }
     }
 
     private void record(Account acc, String type, String other, long amount, String desc) {
@@ -108,11 +153,13 @@ public final class Ledger {
         Account central = accounts.get(centralId);
         if (central == null)
             central = PrimeBankState.get().ensureCentralAccount();
+        String sinkId = getCentralFeeSinkId();
 
         Set<String> keys = new HashSet<>();
         keys.add(buyerId);
         keys.add(companyId);
         keys.add(centralId);
+        keys.add(sinkId);
         List<String> ordered = new ArrayList<>(keys);
         Collections.sort(ordered);
         List<ReentrantLock> locks = new ArrayList<>(ordered.size());
@@ -133,13 +180,10 @@ public final class Ledger {
             company.deposit(netToCompany);
             long toCentral = Money.add(buyerFee, issuerFee);
             if (toCentral > 0)
-                central.deposit(toCentral);
+                depositCentralFee(central, sinkId, toCentral, "MARKET");
 
             record(buyer, "MARKET_BUY", companyId, totalDebit, "Shares buy (incl fees)");
             record(company, "MARKET_SELL", buyerId, netToCompany, "Shares sell (net)");
-            if (toCentral > 0) {
-                record(central, "FEE_COLLECT", "MARKET", toCentral, "Market fees");
-            }
 
             com.primebank.core.logging.TransactionLogger.log(
                     String.format("MARKET BUY: Buyer %s bought from Company %s. Gross: %s, BuyerFee: %s, IssuerFee: %s",
@@ -173,11 +217,13 @@ public final class Ledger {
         Account central = accounts.get(centralId);
         if (central == null)
             central = PrimeBankState.get().ensureCentralAccount();
+        String sinkId = getCentralFeeSinkId();
 
         List<String> keys = new ArrayList<>();
         keys.add(buyerId);
         keys.add(companyId);
         keys.add(centralId);
+        keys.add(sinkId);
         Collections.sort(keys);
         List<ReentrantLock> locks = new ArrayList<>(keys.size());
         for (String k : keys) {
@@ -195,13 +241,10 @@ public final class Ledger {
             buyer.withdraw(amountCents);
             company.deposit(toCompany);
             if (toCentral > 0)
-                central.deposit(toCentral);
+                depositCentralFee(central, sinkId, toCentral, "POS");
 
             record(buyer, "POS_PAY", companyId, amountCents, "POS Payment");
             record(company, "POS_RECEIVE", buyerId, toCompany, "POS Revenue (95%)");
-            if (toCentral > 0) {
-                record(central, "FEE_COLLECT", "POS", toCentral, "POS Fee (5%)");
-            }
 
             com.primebank.core.logging.TransactionLogger
                     .log(String.format("POS CHARGE: Buyer %s paid Company %s. Amount: %s, ToCompany: %s, ToCentral: %s",
@@ -323,11 +366,13 @@ public final class Ledger {
         if (central == null) {
             central = PrimeBankState.get().ensureCentralAccount();
         }
+        String sinkId = getCentralFeeSinkId();
 
         Set<String> keys = new HashSet<>();
         keys.add(fromId);
         keys.add(toId);
         keys.add(centralId);
+        keys.add(sinkId);
         List<String> ordered = new ArrayList<>(keys);
         Collections.sort(ordered);
 
@@ -348,14 +393,11 @@ public final class Ledger {
             from.withdraw(totalDebit);
             to.deposit(amountCents);
             if (fee > 0) {
-                central.deposit(fee);
+                depositCentralFee(central, sinkId, fee, "TRANSFER");
             }
 
             record(from, "TRANSFER_OUT", toId, totalDebit, "Transfer to " + toId);
             record(to, "TRANSFER_IN", fromId, amountCents, "Transfer from " + fromId);
-            if (fee > 0) {
-                record(central, "FEE_COLLECT", fromId, fee, "Transfer fee");
-            }
 
             com.primebank.core.logging.TransactionLogger
                     .log(String.format("TRANSFER: From %s to %s. Amount: %s, Fee: %s", fromId, toId, amountCents, fee));
