@@ -78,7 +78,8 @@ public final class PrimeBankConfig {
                 "central_fee_redirect_company_id = \"\"",
                 "",
                 "# Discord webhook for notifications (optional) / Webhook de Discord para notificaciones (opcional)",
-                "# discord_webhook_url = \"https://discord.com/api/webhooks/...\"",
+                "# Example / Ejemplo: https://discord.com/api/webhooks/...",
+                "discord_webhook_url = \"\"",
                 ""
         );
         Files.write(configFile.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
@@ -93,6 +94,11 @@ public final class PrimeBankConfig {
     public static String CENTRAL_FEE_REDIRECT_COMPANY_ID = null;
 
     public static void load(File serverRoot) {
+        // English: Reset values to defaults before reading to avoid stale data.
+        // Español: Reiniciar valores a los predeterminados antes de leer para evitar datos viejos.
+        DISCORD_WEBHOOK_URL = null;
+        CENTRAL_FEE_REDIRECT_COMPANY_ID = null;
+        CASHBACK_ENABLED = true;
         try {
             File cfg = new File(serverRoot, "serverconfig/primebank.toml");
             if (!cfg.exists()) {
@@ -116,9 +122,9 @@ public final class PrimeBankConfig {
                             if (val.startsWith("\"") && val.endsWith("\"")) {
                                 val = val.substring(1, val.length() - 1);
                             }
-                            if (!val.isEmpty()) {
-                                DISCORD_WEBHOOK_URL = val;
-                            }
+                            // English: Allow clearing by setting empty string; ignore malformed/blank lines.
+                            // Español: Permitir limpiar usando cadena vacía; ignorar líneas mal formadas o vacías.
+                            DISCORD_WEBHOOK_URL = val.isEmpty() ? null : val;
                         }
                     } else if (line.startsWith("cashback_enabled")) {
                         // English: Parse cashback toggle from config (accepts true/false, 1/0).

@@ -93,6 +93,10 @@ public final class Ledger {
                     "[PrimeBank] Central fee redirect: {} cents from {} routed to {} / Redirección de comisión central: {} centavos desde {} hacia {}",
                     amountCents, sourceLabel, sinkId, amountCents, sourceLabel, sinkId);
         }
+        // English: Log fee collection to audit channel (and Discord) for full visibility.
+        // Español: Registrar la cobranza de comisión al canal de auditoría (y Discord) para visibilidad completa.
+        com.primebank.core.logging.TransactionLogger
+                .log(String.format("FEE COLLECT: Source %s amount %s cents routed to %s", sourceLabel, amountCents, sinkId));
     }
 
     private void record(Account acc, String type, String other, long amount, String desc) {
