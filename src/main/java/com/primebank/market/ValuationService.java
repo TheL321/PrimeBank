@@ -158,6 +158,15 @@ public final class ValuationService {
                 c.lastValuationAt = lastValuation;
                 c.salesWeekCents = sales;
                 updated.add(c);
+                // English: Emit valuation change to Discord valuation webhook (and local audit log).
+                // Español: Emitir cambio de valoración al webhook de valoraciones (y log local de auditoría).
+                long pricePerShare = previousValuation / 101L;
+                com.primebank.core.logging.TransactionLogger.logValuation(String.format(
+                        "VALUATION: %s -> valuation=%s cents, price=%s cents/share (run at %s)",
+                        c.shortName != null ? c.shortName : c.id,
+                        previousValuation,
+                        pricePerShare,
+                        new java.util.Date(lastValuation)));
             }
         }
         for (Company c : updated) {

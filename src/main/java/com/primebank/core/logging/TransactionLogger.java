@@ -42,15 +42,42 @@ public class TransactionLogger {
 
             // English: Optionally forward to Discord when configured.
             // Español: Opcionalmente reenviar a Discord cuando esté configurado.
-            if (PrimeBankConfig.DISCORD_WEBHOOK_URL != null && !PrimeBankConfig.DISCORD_WEBHOOK_URL.isEmpty()) {
-                sendToDiscord(logEntry);
-            }
+            sendToWebhook(PrimeBankConfig.DISCORD_WEBHOOK_URL, logEntry);
         });
     }
 
-    private static void sendToDiscord(String message) {
+    /*
+     * English: Log valuation events to an optional secondary webhook. Still writes to
+     * the local audit log for consistency.
+     * Español: Registrar eventos de valoración a un webhook secundario opcional.
+     * También escribe en el log local para consistencia.
+     */
+    public static void logValuation(String message) {
+        EXECUTOR.submit(() -> {
+            String timestamp = LocalDateTime.now().format(DATE_FORMAT);
+            String logEntry = String.format("[%s] %s", timestamp, message);
+
+            // English: Persist locally as part of the audit trail.
+            // Español: Persistir localmente como parte de la trazabilidad.
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(LOG_FILE, true))) {
+                writer.write(logEntry);
+                writer.newLine();
+            } catch (IOException e) {
+                com.primebank.PrimeBankMod.LOGGER
+                        .error("[PrimeBank] Failed to log valuation / Error al registrar valoración", e);
+            }
+
+            // English: Only send to the valuation webhook; avoid sending regular transactions here.
+            // Español: Solo enviar al webhook de valoraciones; evitar enviar transacciones regulares aquí.
+            sendToWebhook(PrimeBankConfig.DISCORD_VALUATION_WEBHOOK_URL, logEntry);
+        });
+    }
+
+    private static void sendToWebhook(String webhookUrl, String message) {
+        if (webhookUrl == null || webhookUrl.isEmpty())
+            return;
         try {
-            URL url = new URL(PrimeBankConfig.DISCORD_WEBHOOK_URL);
+            URL url = new URL(webhookUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(DISCORD_TIMEOUT_MS);
             conn.setReadTimeout(DISCORD_TIMEOUT_MS);

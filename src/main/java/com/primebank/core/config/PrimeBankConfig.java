@@ -48,6 +48,7 @@ public final class PrimeBankConfig {
     public static final boolean ALLOW_OFFLINE_MODE = true;
 
     public static String DISCORD_WEBHOOK_URL = null;
+    public static String DISCORD_VALUATION_WEBHOOK_URL = null;
 
     private PrimeBankConfig() {
     }
@@ -80,6 +81,10 @@ public final class PrimeBankConfig {
                 "# Discord webhook for notifications (optional) / Webhook de Discord para notificaciones (opcional)",
                 "# Example / Ejemplo: https://discord.com/api/webhooks/...",
                 "discord_webhook_url = \"\"",
+                "",
+                "# Discord webhook for valuation updates only (optional) / Webhook de Discord solo para valoraciones (opcional)",
+                "# Example / Ejemplo: https://discord.com/api/webhooks/...",
+                "discord_valuation_webhook_url = \"\"",
                 ""
         );
         Files.write(configFile.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
@@ -97,6 +102,7 @@ public final class PrimeBankConfig {
         // English: Reset values to defaults before reading to avoid stale data.
         // Español: Reiniciar valores a los predeterminados antes de leer para evitar datos viejos.
         DISCORD_WEBHOOK_URL = null;
+        DISCORD_VALUATION_WEBHOOK_URL = null;
         CENTRAL_FEE_REDIRECT_COMPANY_ID = null;
         CASHBACK_ENABLED = true;
         try {
@@ -125,6 +131,17 @@ public final class PrimeBankConfig {
                             // English: Allow clearing by setting empty string; ignore malformed/blank lines.
                             // Español: Permitir limpiar usando cadena vacía; ignorar líneas mal formadas o vacías.
                             DISCORD_WEBHOOK_URL = val.isEmpty() ? null : val;
+                        }
+                    } else if (line.startsWith("discord_valuation_webhook_url")) {
+                        int eq = line.indexOf('=');
+                        if (eq > 0) {
+                            String val = line.substring(eq + 1).trim();
+                            if (val.startsWith("\"") && val.endsWith("\"")) {
+                                val = val.substring(1, val.length() - 1);
+                            }
+                            // English: Separate webhook dedicated to valuation events.
+                            // Español: Webhook separado dedicado a eventos de valoración.
+                            DISCORD_VALUATION_WEBHOOK_URL = val.isEmpty() ? null : val;
                         }
                     } else if (line.startsWith("cashback_enabled")) {
                         // English: Parse cashback toggle from config (accepts true/false, 1/0).
