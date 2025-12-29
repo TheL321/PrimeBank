@@ -37,7 +37,8 @@ public class TransactionLogger {
                 writer.write(logEntry);
                 writer.newLine();
             } catch (IOException e) {
-                com.primebank.PrimeBankMod.LOGGER.error("[PrimeBank] Failed to log transaction / Error al registrar transacción", e);
+                com.primebank.PrimeBankMod.LOGGER
+                        .error("[PrimeBank] Failed to log transaction / Error al registrar transacción", e);
             }
 
             // English: Optionally forward to Discord when configured.
@@ -47,7 +48,8 @@ public class TransactionLogger {
     }
 
     /*
-     * English: Log valuation events to an optional secondary webhook. Still writes to
+     * English: Log valuation events to an optional secondary webhook. Still writes
+     * to
      * the local audit log for consistency.
      * Español: Registrar eventos de valoración a un webhook secundario opcional.
      * También escribe en el log local para consistencia.
@@ -67,15 +69,25 @@ public class TransactionLogger {
                         .error("[PrimeBank] Failed to log valuation / Error al registrar valoración", e);
             }
 
-            // English: Only send to the valuation webhook; avoid sending regular transactions here.
-            // Español: Solo enviar al webhook de valoraciones; evitar enviar transacciones regulares aquí.
+            // English: Only send to the valuation webhook; avoid sending regular
+            // transactions here.
+            // Español: Solo enviar al webhook de valoraciones; evitar enviar transacciones
+            // regulares aquí.
             sendToWebhook(PrimeBankConfig.DISCORD_VALUATION_WEBHOOK_URL, logEntry);
         });
     }
 
     private static void sendToWebhook(String webhookUrl, String message) {
-        if (webhookUrl == null || webhookUrl.isEmpty())
+        if (webhookUrl == null || webhookUrl.trim().isEmpty()) {
             return;
+        }
+
+        // Basic validation: must be a valid http/https URL
+        if (!webhookUrl.startsWith("http")) {
+            com.primebank.PrimeBankMod.LOGGER.warn("[PrimeBank] Invalid Discord webhook URL: {}", webhookUrl);
+            return;
+        }
+
         try {
             URL url = new URL(webhookUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -96,14 +108,17 @@ public class TransactionLogger {
             int code = conn.getResponseCode(); // Trigger request
             if (code < 200 || code >= 300) {
                 com.primebank.PrimeBankMod.LOGGER
-                        .warn("[PrimeBank] Discord webhook responded with {} / Webhook de Discord respondió con {}", code, code);
+                        .warn("[PrimeBank] Discord webhook responded with {} / Webhook de Discord respondió con {}",
+                                code, code);
             }
             conn.disconnect();
         } catch (Exception e) {
             // English: Swallow errors to avoid breaking gameplay, but log once for admins.
-            // Español: Tragar errores para no romper el juego, pero registrar una vez para admins.
+            // Español: Tragar errores para no romper el juego, pero registrar una vez para
+            // admins.
             com.primebank.PrimeBankMod.LOGGER
-                    .warn("[PrimeBank] Discord webhook delivery failed / Error enviando al webhook de Discord", e);
+                    .warn("[PrimeBank] Discord webhook delivery failed / Error enviando al webhook de Discord: {}",
+                            e.getMessage());
         }
     }
 

@@ -29,33 +29,47 @@ public class GuiCompanyApply extends GuiScreen {
         int midX = this.width / 2;
         int midY = this.height / 2;
         this.buttonList.clear();
-        // English: Adjusted spacing to prevent text clipping between labels and text fields.
-        // Español: Espaciado ajustado para evitar que el texto se recorte entre etiquetas y campos de texto.
-        this.name = new GuiTextField(1, this.fontRenderer, midX - 100, midY - 20, 200, 20);
+        // English: Adjusted spacing to prevent text clipping between labels and text
+        // fields.
+        // Español: Espaciado ajustado para evitar que el texto se recorte entre
+        // etiquetas y campos de texto.
+        // Name field moved up slightly to make room
+        this.name = new GuiTextField(1, this.fontRenderer, midX - 100, midY - 30, 200, 20);
         this.name.setFocused(true);
         this.name.setMaxStringLength(64);
-        this.desc = new GuiTextField(2, this.fontRenderer, midX - 100, midY + 20, 200, 20);
+
+        // Description field moved down
+        this.desc = new GuiTextField(2, this.fontRenderer, midX - 100, midY + 25, 200, 20);
         this.desc.setMaxStringLength(128);
-        this.shortName = new GuiTextField(3, this.fontRenderer, midX - 100, midY + 60, 200, 18);
+
+        // Ticker field moved further down
+        this.shortName = new GuiTextField(3, this.fontRenderer, midX - 100, midY + 80, 200, 18);
         this.shortName.setMaxStringLength(12);
         this.shortName.setText("");
-        this.btnSubmit = new GuiButton(0, midX - 100, midY + 92, 90, 20, I18n.format("ui.primebank.ok"));
-        this.btnCancel = new GuiButton(1, midX + 10, midY + 92, 90, 20, I18n.format("ui.primebank.cancel"));
+
+        // Buttons moved to bottom
+        this.btnSubmit = new GuiButton(0, midX - 100, midY + 110, 90, 20, I18n.format("ui.primebank.ok"));
+        this.btnCancel = new GuiButton(1, midX + 10, midY + 110, 90, 20, I18n.format("ui.primebank.cancel"));
         this.buttonList.add(btnSubmit);
         this.buttonList.add(btnCancel);
     }
 
     @Override
     public void updateScreen() {
-        if (this.name != null) this.name.updateCursorCounter();
-        if (this.desc != null) this.desc.updateCursorCounter();
-        if (this.shortName != null) this.shortName.updateCursorCounter();
+        if (this.name != null)
+            this.name.updateCursorCounter();
+        if (this.desc != null)
+            this.desc.updateCursorCounter();
+        if (this.shortName != null)
+            this.shortName.updateCursorCounter();
     }
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
-        if (this.name != null && this.name.textboxKeyTyped(typedChar, keyCode)) return;
-        if (this.desc != null && this.desc.textboxKeyTyped(typedChar, keyCode)) return;
+        if (this.name != null && this.name.textboxKeyTyped(typedChar, keyCode))
+            return;
+        if (this.desc != null && this.desc.textboxKeyTyped(typedChar, keyCode))
+            return;
         if (this.shortName != null && this.shortName.textboxKeyTyped(typedChar, keyCode)) {
             String sanitized = sanitizeTicker(this.shortName.getText());
             this.shortName.setText(sanitized);
@@ -67,30 +81,44 @@ public class GuiCompanyApply extends GuiScreen {
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        if (this.name != null) this.name.mouseClicked(mouseX, mouseY, mouseButton);
-        if (this.desc != null) this.desc.mouseClicked(mouseX, mouseY, mouseButton);
-        if (this.shortName != null) this.shortName.mouseClicked(mouseX, mouseY, mouseButton);
+        if (this.name != null)
+            this.name.mouseClicked(mouseX, mouseY, mouseButton);
+        if (this.desc != null)
+            this.desc.mouseClicked(mouseX, mouseY, mouseButton);
+        if (this.shortName != null)
+            this.shortName.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();
-        if (this.name != null) this.name.drawTextBox();
-        if (this.desc != null) this.desc.drawTextBox();
-        if (this.shortName != null) this.shortName.drawTextBox();
+        if (this.name != null)
+            this.name.drawTextBox();
+        if (this.desc != null)
+            this.desc.drawTextBox();
+        if (this.shortName != null)
+            this.shortName.drawTextBox();
+
         String title = I18n.format("primebank.company.apply.title");
-        drawCenteredString(this.fontRenderer, title, this.width / 2, this.height / 2 - 60, 0xFFFFFF);
-        // English: Field labels and hints for Name, Description, and Ticker with proper spacing.
-        // Español: Etiquetas y pistas de los campos para Nombre, Descripción y Ticker con espaciado adecuado.
+        drawCenteredString(this.fontRenderer, title, this.width / 2, this.height / 2 - 75, 0xFFFFFF);
+
+        // English: Field labels and hints for Name, Description, and Ticker with proper
+        // spacing.
+        // Español: Etiquetas y pistas de los campos para Nombre, Descripción y Ticker
+        // con espaciado adecuado.
         String nameLabel = I18n.format("primebank.company.apply.name_label");
-        drawCenteredString(this.fontRenderer, nameLabel, this.width / 2, this.height / 2 - 42, 0xFFFFFF);
+        drawCenteredString(this.fontRenderer, nameLabel, this.width / 2, this.height / 2 - 55, 0xFFFFFF);
         String nameHint = I18n.format("primebank.company.apply.name_hint");
-        drawCenteredString(this.fontRenderer, nameHint, this.width / 2, this.height / 2 - 32, 0xAAAAAA);
+        drawCenteredString(this.fontRenderer, nameHint, this.width / 2, this.height / 2 - 45, 0xAAAAAA); // Adjusted
+                                                                                                         // hint
+                                                                                                         // position
 
         String descLabel = I18n.format("primebank.company.apply.desc_label");
-        drawCenteredString(this.fontRenderer, descLabel, this.width / 2, this.height / 2 - 2, 0xFFFFFF);
+        drawCenteredString(this.fontRenderer, descLabel, this.width / 2, this.height / 2 + 10, 0xFFFFFF);
+
         String shortLabel = I18n.format("primebank.company.apply.short_label");
-        drawCenteredString(this.fontRenderer, shortLabel, this.width / 2, this.height / 2 + 38, 0xFFFFFF);
+        drawCenteredString(this.fontRenderer, shortLabel, this.width / 2, this.height / 2 + 65, 0xFFFFFF);
+
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
@@ -101,11 +129,13 @@ public class GuiCompanyApply extends GuiScreen {
             String d = this.desc.getText() == null ? "" : this.desc.getText().trim();
             String ticker = sanitizeTicker(this.shortName.getText());
             if (n.isEmpty()) {
-                Minecraft.getMinecraft().player.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_name"));
+                Minecraft.getMinecraft().player
+                        .sendMessage(new TextComponentTranslation("primebank.company.apply.bad_name"));
                 return;
             }
             if (ticker.length() < 2 || ticker.length() > 8) {
-                Minecraft.getMinecraft().player.sendMessage(new TextComponentTranslation("primebank.company.apply.bad_short"));
+                Minecraft.getMinecraft().player
+                        .sendMessage(new TextComponentTranslation("primebank.company.apply.bad_short"));
                 return;
             }
             PrimeBankMod.NETWORK.sendToServer(new PacketCompanyApply(n, d, ticker));
@@ -115,13 +145,18 @@ public class GuiCompanyApply extends GuiScreen {
         }
     }
 
-    private void close() { Minecraft.getMinecraft().displayGuiScreen(null); }
+    private void close() {
+        Minecraft.getMinecraft().displayGuiScreen(null);
+    }
 
     @Override
-    public boolean doesGuiPauseGame() { return false; }
+    public boolean doesGuiPauseGame() {
+        return false;
+    }
 
     private String sanitizeTicker(String raw) {
-        if (raw == null) return "";
+        if (raw == null)
+            return "";
         String cleaned = raw.replaceAll("[^A-Za-z0-9]", "");
         return cleaned.toUpperCase(Locale.ROOT);
     }
