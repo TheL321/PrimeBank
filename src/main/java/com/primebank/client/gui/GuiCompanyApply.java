@@ -79,9 +79,7 @@ public class GuiCompanyApply extends GuiScreen {
         if (this.desc != null) this.desc.drawTextBox();
         if (this.shortName != null) this.shortName.drawTextBox();
         String title = I18n.format("primebank.company.apply.title");
-        String hint = I18n.format("primebank.company.apply.hint");
         drawCenteredString(this.fontRenderer, title, this.width / 2, this.height / 2 - 60, 0xFFFFFF);
-        drawCenteredString(this.fontRenderer, hint, this.width / 2, this.height / 2 - 48, 0xAAAAAA);
         // English: Field labels and hints for Name, Description, and Ticker with proper spacing.
         // Español: Etiquetas y pistas de los campos para Nombre, Descripción y Ticker con espaciado adecuado.
         String nameLabel = I18n.format("primebank.company.apply.name_label");
@@ -91,12 +89,8 @@ public class GuiCompanyApply extends GuiScreen {
 
         String descLabel = I18n.format("primebank.company.apply.desc_label");
         drawCenteredString(this.fontRenderer, descLabel, this.width / 2, this.height / 2 - 2, 0xFFFFFF);
-        String descHint = I18n.format("primebank.company.apply.desc_hint");
-        drawCenteredString(this.fontRenderer, descHint, this.width / 2, this.height / 2 + 8, 0xAAAAAA);
         String shortLabel = I18n.format("primebank.company.apply.short_label");
         drawCenteredString(this.fontRenderer, shortLabel, this.width / 2, this.height / 2 + 38, 0xFFFFFF);
-        String shortHint = I18n.format("primebank.company.apply.short_hint");
-        drawCenteredString(this.fontRenderer, shortHint, this.width / 2, this.height / 2 + 48, 0xAAAAAA);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 

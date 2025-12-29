@@ -38,10 +38,33 @@ public final class Ledger {
         String cfg = PrimeBankConfig.CENTRAL_FEE_REDIRECT_COMPANY_ID;
         if (cfg != null) {
             String trimmed = cfg.trim();
-            if (!trimmed.isEmpty() && accounts.get(trimmed) != null) {
-                return trimmed;
-            }
             if (!trimmed.isEmpty()) {
+                // English: Allow redirect to either a direct account id (e.g. "c:<uuid>")
+                // or a company identifier (ticker/id).
+                // Español: Permitir redirección a un id de cuenta directo (ej. "c:<uuid>")
+                // o a un identificador de empresa (ticker/id).
+                if (accounts.get(trimmed) != null) {
+                    return trimmed;
+                }
+
+                String resolvedCompanyId = PrimeBankState.get().resolveCompanyIdentifier(trimmed);
+                if (resolvedCompanyId != null) {
+                    // English: Ensure the company account exists so fee deposits don't silently
+                    // fall back to central.
+                    // Español: Asegurar que la cuenta de la empresa exista para que los depósitos
+                    // de comisiones no vuelvan silenciosamente al central.
+                    if (accounts.get(resolvedCompanyId) == null) {
+                        com.primebank.core.company.Company c = PrimeBankState.get().companies().get(resolvedCompanyId);
+                        if (c != null) {
+                            accounts.create(resolvedCompanyId, com.primebank.core.accounts.AccountType.COMPANY,
+                                    c.ownerUuid, 0L);
+                        }
+                    }
+                    if (accounts.get(resolvedCompanyId) != null) {
+                        return resolvedCompanyId;
+                    }
+                }
+
                 com.primebank.PrimeBankMod.LOGGER.warn(
                         "[PrimeBank] Central fee redirect target '{}' not found; keeping fees in central / destino no encontrado; se mantienen las comisiones en central",
                         trimmed);

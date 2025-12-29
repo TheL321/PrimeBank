@@ -887,6 +887,15 @@ public class CommandPrimeBank extends CommandBase {
     }
 
     @Override
+    public boolean checkPermission(MinecraftServer server, ICommandSender sender) {
+        // English: Allow all players to run /primebank; admin-only subcommands are
+        // gated inside execute() via AdminService.
+        // Español: Permitir que todos los jugadores usen /primebank; los subcomandos
+        // de admin se controlan dentro de execute() vía AdminService.
+        return true;
+    }
+
+    @Override
     public List<String> getAliases() {
         return java.util.Collections.singletonList("pb");
     }

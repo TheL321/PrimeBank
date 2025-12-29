@@ -14,6 +14,7 @@ import java.util.UUID;
 public final class AdminService {
     private static final Set<UUID> ADMIN_UUIDS = new HashSet<>();
     private static boolean configExists = false; // Track if config file was found.
+    private static boolean adminsKeyPresent = false; // Track if an explicit admins allowlist is set.
 
     private AdminService() {
     }
@@ -21,10 +22,12 @@ public final class AdminService {
     public static void reload(File serverRoot) {
         Set<UUID> tempInfo = new HashSet<>();
         boolean found = false;
+        boolean adminsKeyFound = false;
         try {
             File cfg = new File(serverRoot, "serverconfig/primebank.toml");
             if (!cfg.exists()) {
                 configExists = false;
+                adminsKeyPresent = false;
                 ADMIN_UUIDS.clear(); // If config deleted, fall back to "allow all" (standard mod behavior) or "allow
                                      // none"?
                 // Standard behavior: if no config, OP is enough.
@@ -36,6 +39,7 @@ public final class AdminService {
                 while ((line = br.readLine()) != null) {
                     line = line.trim();
                     if (line.startsWith("admins")) {
+                        adminsKeyFound = true;
                         int lb = line.indexOf('[');
                         int rb = line.indexOf(']');
                         if (lb >= 0 && rb > lb) {
@@ -60,6 +64,7 @@ public final class AdminService {
             ADMIN_UUIDS.clear();
             ADMIN_UUIDS.addAll(tempInfo);
             configExists = true;
+            adminsKeyPresent = adminsKeyFound;
             com.primebank.PrimeBankMod.LOGGER.info("[PrimeBank] Loaded {} admins.", ADMIN_UUIDS.size());
         } catch (Exception ex) {
             com.primebank.PrimeBankMod.LOGGER
@@ -88,17 +93,15 @@ public final class AdminService {
             if (!isOp)
                 return false;
 
-            // If config does not exist, we allow all OPs.
-            if (!configExists)
+            // English: If the config file does not exist OR it does not define an explicit
+            // admins allowlist, fall back to "OPs are admins".
+            // Español: Si el archivo de config no existe O no define una allowlist explícita
+            // de admins, usar el repliegue "los OPs son admins".
+            if (!configExists || !adminsKeyPresent)
                 return true;
 
-            // If config exists, we enforce the list.
-            // If list is empty (but config exists), that implies "No Admins Allowed"
-            // (unless empty list means allow all?)
-            // Usually empty 'admins=[]' means no admins.
-            // To prevent lockout, if someone accidentally makes it empty:
-            // But for security: Empty list = No access.
-
+            // English: If an explicit allowlist is configured, enforce it in addition to OP.
+            // Español: Si hay un allowlist explícito configurado, aplicarlo además de OP.
             return ADMIN_UUIDS.contains(uuid);
         } catch (Throwable t) {
             return false;
