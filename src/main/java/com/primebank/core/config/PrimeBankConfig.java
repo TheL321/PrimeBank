@@ -45,6 +45,7 @@ public final class PrimeBankConfig {
 
     public static String DISCORD_WEBHOOK_URL = "";
     public static String DISCORD_VALUATION_WEBHOOK_URL = "";
+    public static String DISCORD_MESSAGE_LANGUAGE = "en";
 
     private PrimeBankConfig() {
     }
@@ -85,6 +86,11 @@ public final class PrimeBankConfig {
                     "# Example / Ejemplo: https://discord.com/api/webhooks/...",
                     "discord_valuation_webhook_url = \""
                             + (DISCORD_VALUATION_WEBHOOK_URL == null ? "" : DISCORD_VALUATION_WEBHOOK_URL) + "\"",
+                    "",
+                    "# Language for Discord messages (en/es) / Idioma para mensajes de Discord (en/es)",
+                    "discord_message_language = \""
+                            + (DISCORD_MESSAGE_LANGUAGE == null ? "en" : DISCORD_MESSAGE_LANGUAGE)
+                            + "\"",
                     "");
             Files.write(configFile.toPath(), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE);
@@ -108,6 +114,7 @@ public final class PrimeBankConfig {
         // datos viejos.
         DISCORD_WEBHOOK_URL = "";
         DISCORD_VALUATION_WEBHOOK_URL = "";
+        DISCORD_MESSAGE_LANGUAGE = "en";
         CENTRAL_FEE_REDIRECT_COMPANY_ID = null;
         CASHBACK_ENABLED = true;
 
@@ -151,6 +158,16 @@ public final class PrimeBankConfig {
                         }
                         DISCORD_VALUATION_WEBHOOK_URL = val.isEmpty() ? "" : val;
                     }
+                } else if (line.startsWith("discord_message_language")) {
+                    foundKeys.add("discord_message_language");
+                    int eq = line.indexOf('=');
+                    if (eq > 0) {
+                        String val = line.substring(eq + 1).trim();
+                        if (val.startsWith("\"") && val.endsWith("\"")) {
+                            val = val.substring(1, val.length() - 1);
+                        }
+                        DISCORD_MESSAGE_LANGUAGE = val.isEmpty() ? "en" : val;
+                    }
                 } else if (line.startsWith("cashback_enabled")) {
                     foundKeys.add("cashback_enabled");
                     int eq = line.indexOf('=');
@@ -190,6 +207,7 @@ public final class PrimeBankConfig {
         // Check if any key is missing, if so, rewrite file to update it
         if (!foundKeys.contains("discord_webhook_url") ||
                 !foundKeys.contains("discord_valuation_webhook_url") ||
+                !foundKeys.contains("discord_message_language") ||
                 !foundKeys.contains("cashback_enabled") ||
                 !foundKeys.contains("central_fee_redirect_company_id")) {
 
