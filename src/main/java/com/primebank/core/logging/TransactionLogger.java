@@ -55,14 +55,15 @@ public class TransactionLogger {
      * También escribe en el log local para consistencia.
      */
     public static void logValuation(String companyName, long valuationCents, long pricePerShareCents,
-            long timestampArg) {
+            long previousValuationCents, long previousPriceCents, int listedShares, long timestampArg) {
         EXECUTOR.submit(() -> {
             String timestamp = LocalDateTime.now().format(DATE_FORMAT);
             // English: Plain text for local log
             // Español: Texto plano para log local
             String logEntry = String.format(
-                    "[%s] VALUATION: %s -> valuation=%d cents, price=%d cents/share (run at %s)",
-                    timestamp, companyName, valuationCents, pricePerShareCents, new java.util.Date(timestampArg));
+                    "[%s] VALUATION: %s -> valuation=%d cents (prev=%d), price=%d cents/share (prev=%d), listed=%d shares (run at %s)",
+                    timestamp, companyName, valuationCents, previousValuationCents, pricePerShareCents,
+                    previousPriceCents, listedShares, new java.util.Date(timestampArg));
 
             // English: Persist locally as part of the audit trail.
             // Español: Persistir localmente como parte de la trazabilidad.
@@ -82,40 +83,54 @@ public class TransactionLogger {
             String title = isEs ? "Nueva Valoración" : "New Valuation";
             String fieldCompany = isEs ? "Empresa" : "Company";
             String fieldValuation = isEs ? "Valoración" : "Valuation";
+            String fieldPrevValuation = isEs ? "Valoración Anterior" : "Previous Valuation";
             String fieldPrice = isEs ? "Precio por Acción" : "Price per Share";
+            String fieldPrevPrice = isEs ? "Precio Anterior" : "Previous Price";
+            String fieldDifference = isEs ? "Diferencia" : "Difference";
+            String fieldListedShares = isEs ? "Acciones Listadas" : "Listed Shares";
             String footerText = isEs ? "Actualizado" : "Updated";
 
-            // Format numbers nicely? For now just raw cents/long is fine, or simple
-            // currency formatting if preferred.
-            // Let's stick to raw values but maybe formatted slightly better if possible,
-            // but raw is safe.
-            // Actually, showing "1000 cents" is a bit raw. Let's do "$10.00" style if
-            // simple.
-            // For simplicity and robustness, keeping it similar to before or just raw
-            // numbers.
-            // User asked for "prettier", so $X.XX is better.
+            // Format numbers nicely
             String valFormatted = String.format("$%.2f", valuationCents / 100.0);
             String priceFormatted = String.format("$%.2f", pricePerShareCents / 100.0);
+            String prevValFormatted = String.format("$%.2f", previousValuationCents / 100.0);
+            String prevPriceFormatted = String.format("$%.2f", previousPriceCents / 100.0);
+
+            // Calculate differences
+            long valuationDiff = valuationCents - previousValuationCents;
+            long priceDiff = pricePerShareCents - previousPriceCents;
+            String valuationDiffFormatted = String.format("%s$%.2f", valuationDiff >= 0 ? "+" : "",
+                    valuationDiff / 100.0);
+            String priceDiffFormatted = String.format("%s$%.2f", priceDiff >= 0 ? "+" : "", priceDiff / 100.0);
 
             // Discord Embed JSON structure
-            // Color: 0x00FF00 (Green)
+            // Color: 0x00FF00 (Green) for positive, 0xFF0000 (Red) for negative
+            int embedColor = valuationDiff >= 0 ? 65280 : 16711680;
+
             String jsonPayload = String.format(
                     "{" +
                             "\"embeds\": [{" +
                             "\"title\": \"%s\"," +
-                            "\"color\": 65280," +
+                            "\"color\": %d," +
                             "\"fields\": [" +
                             "{\"name\": \"%s\", \"value\": \"%s\", \"inline\": true}," +
+                            "{\"name\": \"%s\", \"value\": \"%s (%s)\", \"inline\": true}," +
                             "{\"name\": \"%s\", \"value\": \"%s\", \"inline\": true}," +
-                            "{\"name\": \"%s\", \"value\": \"%s\", \"inline\": true}" +
+                            "{\"name\": \"%s\", \"value\": \"%s (%s)\", \"inline\": true}," +
+                            "{\"name\": \"%s\", \"value\": \"%s\", \"inline\": true}," +
+                            "{\"name\": \"%s\", \"value\": \"%d\", \"inline\": true}" +
                             "]," +
                             "\"footer\": {\"text\": \"%s: %s\"}" +
                             "}]" +
                             "}",
                     title,
+                    embedColor,
                     fieldCompany, escapeJson(companyName),
-                    fieldValuation, valFormatted,
-                    fieldPrice, priceFormatted,
+                    fieldValuation, valFormatted, valuationDiffFormatted,
+                    fieldPrevValuation, prevValFormatted,
+                    fieldPrice, priceFormatted, priceDiffFormatted,
+                    fieldPrevPrice, prevPriceFormatted,
+                    fieldListedShares, listedShares,
                     footerText, timestamp);
 
             sendToWebhookRaw(PrimeBankConfig.DISCORD_VALUATION_WEBHOOK_URL, jsonPayload);

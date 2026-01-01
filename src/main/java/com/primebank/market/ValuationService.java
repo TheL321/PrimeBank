@@ -163,10 +163,23 @@ public final class ValuationService {
                 // Español: Emitir cambio de valoración al webhook de valoraciones (y log local
                 // de auditoría).
                 long pricePerShare = previousValuation / 101L;
+                // English: Get previous valuation from history (second-to-last value, or 0 if
+                // first valuation)
+                // Español: Obtener valoración anterior del historial (penúltimo valor, o 0 si
+                // es la primera valoración)
+                long prevValuation = 0L;
+                if (c.valuationHistoryCents != null && c.valuationHistoryCents.size() >= 2) {
+                    prevValuation = c.valuationHistoryCents.get(c.valuationHistoryCents.size() - 2);
+                }
+                long prevPrice = prevValuation / 101L;
+
                 com.primebank.core.logging.TransactionLogger.logValuation(
                         c.shortName != null ? c.shortName : c.id,
                         previousValuation,
                         pricePerShare,
+                        prevValuation,
+                        prevPrice,
+                        c.listedShares,
                         lastValuation);
             }
         }
