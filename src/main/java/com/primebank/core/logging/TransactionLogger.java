@@ -13,6 +13,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.text.NumberFormat;
+import java.util.Locale;
 
 import com.primebank.core.config.PrimeBankConfig;
 
@@ -91,17 +93,17 @@ public class TransactionLogger {
             String footerText = isEs ? "Actualizado" : "Updated";
 
             // Format numbers nicely
-            String valFormatted = String.format("$%.2f", valuationCents / 100.0);
-            String priceFormatted = String.format("$%.2f", pricePerShareCents / 100.0);
-            String prevValFormatted = String.format("$%.2f", previousValuationCents / 100.0);
-            String prevPriceFormatted = String.format("$%.2f", previousPriceCents / 100.0);
+            String valFormatted = "$" + formatCurrency(valuationCents);
+            String priceFormatted = "$" + formatCurrency(pricePerShareCents);
+            String prevValFormatted = "$" + formatCurrency(previousValuationCents);
+            String prevPriceFormatted = "$" + formatCurrency(previousPriceCents);
 
             // Calculate differences
             long valuationDiff = valuationCents - previousValuationCents;
             long priceDiff = pricePerShareCents - previousPriceCents;
-            String valuationDiffFormatted = String.format("%s$%.2f", valuationDiff >= 0 ? "+" : "",
-                    valuationDiff / 100.0);
-            String priceDiffFormatted = String.format("%s$%.2f", priceDiff >= 0 ? "+" : "", priceDiff / 100.0);
+            String valuationDiffFormatted = (valuationDiff >= 0 ? "+" : "-") + "$"
+                    + formatCurrency(Math.abs(valuationDiff));
+            String priceDiffFormatted = (priceDiff >= 0 ? "+" : "-") + "$" + formatCurrency(Math.abs(priceDiff));
 
             // Discord Embed JSON structure
             // Color: 0x00FF00 (Green) for positive, 0xFF0000 (Red) for negative
@@ -229,5 +231,13 @@ public class TransactionLogger {
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\t", "\\t");
+    }
+
+    private static String formatCurrency(long cents) {
+        double value = cents / 100.0;
+        NumberFormat formatter = NumberFormat.getInstance(Locale.GERMANY);
+        formatter.setMinimumFractionDigits(2);
+        formatter.setMaximumFractionDigits(2);
+        return formatter.format(value);
     }
 }
