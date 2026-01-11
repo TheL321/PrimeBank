@@ -105,14 +105,11 @@ public final class ValuationService {
             long sales = c.salesWeekCents;
             boolean changed = false;
 
-            // English: Safeguard to prevent runaway catch-up loops (max 365 days = 1 year).
-            // Español: Protección para prevenir bucles catch-up descontrolados (máx 365
-            // días = 1 año).
-            int maxCatchupDays = 365;
-            int catchupCount = 0;
-
-            while (now >= dueAt && catchupCount < maxCatchupDays) {
-                catchupCount++;
+            if (now >= dueAt) {
+                // English: Perform ONE valuation for the period that just finished (or the
+                // earliest one due).
+                // Español: Realizar UNA valoración para el periodo que acaba de terminar (o el
+                // más antiguo vencido).
                 long dailySales = Math.max(0L, sales);
                 c.salesLast7DaysCents.add(dailySales);
                 if (c.salesLast7DaysCents.size() > 7) {
@@ -147,10 +144,24 @@ public final class ValuationService {
 
                 previousValuation = valuation;
                 lastValuation = dueAt;
-                dueAt = lastValuation + DAY_MS;
-                sales = 0L; // English: After first catch-up, remaining days assume no recorded sales.
-                            // Español: Tras el primer catch-up, se asume cero ventas en días restantes.
+                sales = 0L;
                 changed = true;
+
+                // English: If we are still behind (due to downtime), skip the missed periods.
+                // We do NOT simulate 0-sales days for the time the server was down; we just
+                // fast-forward the schedule.
+                // Español: Si todavía estamos atrasados (debido a tiempo de inactividad),
+                // saltar los periodos perdidos.
+                // NO simulamos días de 0 ventas para el tiempo que el servidor estuvo caído;
+                // simplemente adelantamos el cronograma.
+                long nextDue = lastValuation + DAY_MS;
+                if (now >= nextDue) {
+                    long diff = now - lastValuation;
+                    long skippedPeriods = diff / DAY_MS;
+                    lastValuation += (skippedPeriods * DAY_MS);
+                    PrimeBankMod.LOGGER.info("[PrimeBank] Skipped {} valuation periods for company {} due to downtime.",
+                            skippedPeriods, c.id);
+                }
             }
 
             if (changed) {
