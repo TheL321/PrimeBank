@@ -10,6 +10,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+
 # English: Avoid running multiple redundant builds per branch concurrently.
 # Español: Evita ejecutar múltiples compilaciones redundantes por rama simultáneamente.
 concurrency:
