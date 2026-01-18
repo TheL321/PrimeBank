@@ -240,12 +240,23 @@ public final class MarketPrimaryService {
             int toFill = shares;
 
             // 1. Fill from Secondary
-            // We can't modify c.sellerListings while iterating. Create copy key set or
-            // iterator.
+            // English: We can't modify c.sellerListings while iterating. Create copy key
+            // set.
+            // English: IMPORTANT: Skip the buyer's own listings to prevent self-transfer
+            // errors.
+            // Español: No podemos modificar c.sellerListings mientras iteramos. Crear copia
+            // del key set.
+            // Español: IMPORTANTE: Saltar listados del propio comprador para evitar errores
+            // de auto-transferencia.
+            String buyerKey = buyer.toString();
             java.util.List<String> sellers = new java.util.ArrayList<>(c.sellerListings.keySet());
             for (String sellerId : sellers) {
                 if (toFill <= 0)
                     break;
+                // English: Skip own listings - buyer cannot purchase from themselves.
+                // Español: Saltar listados propios - comprador no puede comprarse a sí mismo.
+                if (sellerId.equals(buyerKey))
+                    continue;
                 int avail = c.sellerListings.get(sellerId);
                 if (avail > 0) {
                     int take = Math.min(avail, toFill);
@@ -360,7 +371,8 @@ public final class MarketPrimaryService {
             }
 
             // Update Buyer Holdings
-            String buyerKey = buyer.toString();
+            // English: buyerKey was declared earlier when filling from secondary market.
+            // Español: buyerKey fue declarado antes al llenar del mercado secundario.
             c.holdings.put(buyerKey, c.holdings.getOrDefault(buyerKey, 0) + shares);
 
             CompanyPersistence.saveCompany(c);
